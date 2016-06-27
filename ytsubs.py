@@ -1,27 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2014 Alistair Buxton <a.j.buxton@gmail.com>
-#
-# Permission is hereby granted, free of charge, to any person
-# obtaining a copy of this software and associated documentation
-# files (the "Software"), to deal in the Software without
-# restriction, including without limitation the rights to use,
-# copy, modify, merge, publish, distribute, sublicense, and/or
-# sell copies of the Software, and to permit persons to whom
-# the Software is furnished to do so, subject to the following
-# conditions:
-#
-# The above copyright notice and this permission notice shall be
-# included in all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
-# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
-# PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS
-# OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
-# OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-# OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-# SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# Inspired by https://github.com/ali1234/ytsubs
 
 import urllib2
 import json
@@ -31,19 +10,20 @@ import sys
 from xml.etree.ElementTree import Element, SubElement, Comment, tostring
 
 baseurl = 'https://www.googleapis.com/youtube/v3'
-my_key = 'AIzaSyAScUPYKf45DhG8xJaEKECADPZ1EWQ16G4'
+my_key = 'AIzaSyAkomd5v3HWilMdrVgNwKyTs7o5RM5O7pw'
+my_channel = 'UCjVRF7iMB-35SB6mVMSeHiA'
 
 # check for missing inputs
 if not my_key:
-  print "YOUTUBE_SERVER_API_KEY variable missing."
+  print "YOUTUBE API KEY is wrong or missing."
   sys.exit(-1)
 
 if not len(sys.argv) >= 0:
-  print "username and (optionally) destination file must be specified as first and second arguments."
+  print "Channel ID and (optionally) destination file must be specified as first and second arguments."
   sys.exit(-1)
 
 def get_channel_for_user(user):
-    url = baseurl + '/channels?part=id&id='+ 'UCjVRF7iMB-35SB6mVMSeHiA' + '&key=' + my_key
+    url = baseurl + '/channels?part=id&id='+ my_channel + '&key=' + my_key
     response = urllib2.urlopen(url)
     data = json.load(response)
     return data['items'][0]['id']
@@ -53,11 +33,11 @@ def get_playlists(channel):
     # we have to get the full snippet here, because there is no other way to get the channelId
     # of the channels you're subscribed to. 'id' returns a subscription id, which can only be
     # used to subsequently get the full snippet, so we may as well just get the whole lot up front.
-    url = baseurl + '/subscriptions?part=snippet&channelId='+ channel + '&maxResults=50&key=' + my_key
+    url = baseurl + '/subscriptions?part=snippet&channelId='+ channel + '&maxResults=10&key=' + my_key
 
     next_page = ''
     while True:
-        # we are limited to 50 results. if the user subscribed to more than 50 channels
+        # we are limited to 10 results. if the user subscribed to more than 10 channels
         # we have to make multiple requests here.
         response = urllib2.urlopen(url+next_page)
         data = json.load(response)
@@ -114,10 +94,8 @@ def chunks(l, n):
 
 def do_it():
 
-    username = 'UCjVRF7iMB-35SB6mVMSeHiA'
-
     # get all upload playlists of subbed channels
-    playlists = get_playlists(get_channel_for_user(username))
+    playlists = get_playlists(get_channel_for_user(my_channel))
 
     # get the last 5 items from every playlist
     allitems = []
@@ -138,7 +116,7 @@ def do_it():
     rss.attrib['version'] = '2.0'
     channel = SubElement(rss, 'channel')
     title = SubElement(channel, 'title')
-    title.text = 'Youtube subscriptions for ' + username
+    title.text = 'Youtube subscriptions for ' + my_channel
     link = SubElement(channel, 'link')
     link.text = 'http://www.youtube.com/'
 
@@ -170,7 +148,6 @@ def do_it():
     f.write(id.text)
     #f.write(tostring(rss).encode('utf-8'))
     f.close()
-
 
 
 if __name__ == '__main__':
