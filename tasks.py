@@ -20,7 +20,14 @@ def get_settings(file_settings):
 
 @app.task
 def clean():
+
     dir = 'files'
+
+    try:
+        os.stat(dir)
+    except:
+        os.mkdir(dir)
+
     shutil.rmtree(dir)
     os.makedirs(dir)
 
@@ -44,7 +51,7 @@ def download_last_video():
 
     # Get out of the subprocess which is the video id
     #out = proc.communicate()[0]
-    out = "pJt88dFv9Wg"
+    out = "68IsQg7BL_0"
     print out
 
     # New pafy object with video ID
@@ -69,6 +76,8 @@ def download_last_video():
     filename = s.download(filepath="files/inputr.mp4")  # starts download
     filename = sa.download(filepath="files/audio.m4a")  # starts download
 
+    return v.title
+
 @app.task
 def convert_to_25_fps(file_mp4):
 
@@ -78,10 +87,10 @@ def convert_to_25_fps(file_mp4):
     subprocess.call(command_line_fps, shell=True)
 
 @app.task
-def thumbnail(file_mp4):
+def thumbnail(file_mp4, title):
 
     # Convert to 25 fps
-    command_line_fps = "ffmpeg -i "+file_mp4+" -vf  \"thumbnail,scale=640:360\" -frames:v 1 files/thumbnail.png"
+    command_line_fps = "ffmpeg -i "+file_mp4+" -vf  \"thumbnail,scale=640:360\" -frames:v 1 files/"+title+"/thumbnail.png"
     subprocess.call(command_line_fps, shell=True)
 
 
@@ -105,22 +114,22 @@ def encode(bitrate):
     subprocess.call(command_line, shell=True)
 
 @app.task
-def encode_audio(time_ms):
+def encode_audio(time_ms, title):
     # ffmpeg -i input.m4a -c:a aac -strict -2 -force_key_frames expr:gte\(t,n_forced*4\) outaudio.m4a
-    os.mkdir("files/audio")
+    os.mkdir("files/"+title+"/audio")
     command_line = "ffmpeg -i files/audio.m4a -c:a aac -strict -2 -force_key_frames expr:gte\(t,n_forced*0.5\) files/outaudio.m4a"
     subprocess.call(command_line, shell=True)
     command_line = "ffmpeg -i files/outaudio.m4a -ss 0.5 -c:a copy files/outaudiog.m4a"
     print(command_line)
     subprocess.call(command_line, shell=True)
-    command_line2 = "cd files; ./../tools/MP4Box/MP4Box -dash " + time_ms + " -profile live -segment-name 'out_dash$Number$' -out 'audio/mpd.mpd' outaudiog.m4a"
+    command_line2 = "MP4Box -dash " + time_ms + " -profile live -segment-name 'out_dash$Number$' -out 'files/"+title+"/audio/mpd.mpd' files/outaudiog.m4a"
     subprocess.call(command_line2, shell=True)
 
 
 @app.task
 def encode2(bitrate, resolution):
     # ffmpeg -i origin.mov -c:v libx264 -b:v 1000k -x264opts keyint=12:min-keyint=1:scenecut=-1 out.h264
-    command_line = "ffmpeg -y -i files/input.mp4 -i tools/watermarks/"+resolution+"/"+bitrate+".png -filter_complex \"overlay=0:0\" -c:v libx264 -profile:v main -b:v " + bitrate + "k -x264opts keyint=12:min-keyint=12:scenecut=-1 -bf 0 -r 24 files/out" + bitrate + ".h264"
+    command_line = "ffmpeg -y -i files/input.mp4 -i watermarks/"+resolution+"/"+bitrate+".png -filter_complex \"overlay=0:0\" -c:v libx264 -profile:v main -b:v " + bitrate + "k -x264opts keyint=12:min-keyint=12:scenecut=-1 -bf 0 -r 24 files/out" + bitrate + ".h264"
     subprocess.call(command_line, shell=True)
 
 @app.task
@@ -151,21 +160,21 @@ def remove_first_gop(file_h264, quality):
 
 
 @app.task
-def dash_segmentation(file_mp4, time_ms):
+def dash_segmentation(file_mp4, time_ms, title):
     # MP4Box version > 5.1
     # MP4Box -dash 6000 -profile live -segment-name '$Bandwidth$/out$Bandwidth$_dash$Number$' -out mpd.mpd inputfile.mp4
-    command_line = "cd files; ./../tools/MP4Box/MP4Box -dash " + time_ms + " -profile live -segment-name '$Bandwidth$/out$Bandwidth$_dash$Number$' -out 'mpd.mpd' "+ file_mp4
+    command_line = "MP4Box -dash " + time_ms + " -profile live -segment-name 'files/"+title+"/$Bandwidth$/out$Bandwidth$_dash$Number$' -out 'mpd.mpd' files/"+file_mp4
     print(command_line)
     subprocess.call(command_line, shell=True)
 
 
 @app.task
-def order_files():
-    xmldoc = minidom.parse('files/mpd.mpd')
+def order_files(title):
+    xmldoc = minidom.parse('mpd.mpd')
     rep = xmldoc.getElementsByTagName('Representation')
     for node in rep:
         print(node.getAttribute('bandwidth'))
-        shutil.move("files/mpd.mpd", "files/" + node.getAttribute('bandwidth') + "/mpd.mpd")
+        shutil.move("mpd.mpd", "files/"+title+"/" + node.getAttribute('bandwidth') + "/mpd.mpd")
 
     #os.rename("files/" + node.getAttribute('bandwidth') + "/out" + node.getAttribute('bandwidth') + "_dash.mp4", "files/" + node.getAttribute('bandwidth') + "/init.mp4")
     #shutil.move("files/" + node.getAttribute('bandwidth') + "/init.mp4", "files/init.mp4")
@@ -182,6 +191,12 @@ def delete_files():
     shutil.move("files/" + node.getAttribute('bandwidth') + "/init.mp4", "files/init.mp4")
 
 
+def zipdir(path, ziph):
+    # ziph is zipfile handle
+    for root, dirs, files in os.walk(path):
+        for file in files:
+            ziph.write(os.path.join(root, file))
+
 @app.task
 def process():
 
@@ -189,14 +204,19 @@ def process():
 
     settings = get_settings("settings.ini")
 
-    download_last_video()
+    title = download_last_video()
+    titled = title.replace(" ", "_")
+    titled = titled.replace("|", "")
 
+    print titled
+
+    os.mkdir("files/"+titled)
     # Thumbnail
-    thumbnail("files/inputr.mp4")
+    thumbnail("files/inputr.mp4", titled)
 
     # Audio
-    encode_audio("6000")
-
+    encode_audio("6000", titled)
+    
     print settings.sections()
 
     for resolution in settings.sections():
@@ -209,9 +229,11 @@ def process():
             encode2(quality, resolution)
             remove_first_gop("files/out"+quality+".h264", quality)
             mux("files/out"+quality+".h264",quality)
-            dash_segmentation("'out"+quality+"g.mp4'", "6000")
-            order_files()
+            dash_segmentation("'out"+quality+"g.mp4'", "6000", titled)
+            order_files(titled)
 
-
+    zipf = zipfile.ZipFile("files/"+titled+".zip", 'w', zipfile.ZIP_DEFLATED)
+    zipdir("files/"+titled, zipf)
+    zipf.close()
 
 
