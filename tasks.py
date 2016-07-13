@@ -211,7 +211,3 @@ def process():
             mux("files/out"+quality+".h264",quality)
             dash_segmentation("'out"+quality+"g.mp4'", "6000")
             order_files()
-
-
-
-
