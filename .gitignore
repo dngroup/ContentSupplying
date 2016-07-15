@@ -10,10 +10,12 @@
 *.aac
 *.h264
 *.m4a
-*.png
 *.mpd
 *.temp
 *.zip
+
+# Python
+*.pyc
 
 
 # User-specific stuff:
