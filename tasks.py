@@ -57,7 +57,7 @@ def download_last_video():
 
     # Get out of the subprocess which is the video id
     #out = proc.communicate()[0]
-    out = "68IsQg7BL_0"
+    out = "BoRHLhIfBIs"
     #print out
 
     # New pafy object with video ID
@@ -86,18 +86,23 @@ def thumbnail(file_mp4, title):
 
 @app.task
 def encode_audio(time_ms, title):
+
     print(HEADER + "Audio encoding" + ENDC)
-    # ffmpeg -i input.m4a -c:a aac -strict -2 -force_key_frames expr:gte\(t,n_forced*4\) outaudio.m4a
-    os.mkdir("files/"+title+"/audio")
-    command_line = "ffmpeg -i files/audio.m4a -c:a aac -strict -2 -force_key_frames expr:gte\(t,n_forced*0.5\) files/outaudio.m4a"
-    subprocess.call(command_line, stdout=FNULL, stderr=subprocess.STDOUT, shell=True)
-    print(WARNING + "\tEncoding" + ENDC)
-    command_line = "ffmpeg -i files/outaudio.m4a -ss 0.5 -c:a copy files/outaudiog.m4a"
-    #print(command_line)
-    subprocess.call(command_line, stdout=FNULL, stderr=subprocess.STDOUT, shell=True)
-    command_line2 = "MP4Box -dash " + time_ms + " -profile live -segment-name 'out_dash$Number$' -out 'files/"+title+"/audio/mpd.mpd' files/outaudiog.m4a"
-    subprocess.call(command_line2, stdout=FNULL, stderr=subprocess.STDOUT, shell=True)
-    print(WARNING + "\tDash segmentation" + ENDC)
+
+    if(os.path.exists("files/audio.aac")):
+        # ffmpeg -i input.m4a -c:a aac -strict -2 -force_key_frames expr:gte\(t,n_forced*4\) outaudio.m4a
+        os.mkdir("files/"+title+"/audio")
+        command_line = "ffmpeg -i files/audio.m4a -c:a aac -strict -2 -force_key_frames expr:gte\(t,n_forced*0.5\) files/outaudio.m4a"
+        subprocess.call(command_line, stdout=FNULL, stderr=subprocess.STDOUT, shell=True)
+        print(WARNING + "\tEncoding" + ENDC)
+        command_line = "ffmpeg -i files/outaudio.m4a -ss 0.5 -c:a copy files/outaudiog.m4a"
+        #print(command_line)
+        subprocess.call(command_line, stdout=FNULL, stderr=subprocess.STDOUT, shell=True)
+        command_line2 = "MP4Box -dash " + time_ms + " -profile live -segment-name 'out_dash$Number$' -out 'files/"+title+"/audio/mpd.mpd' files/outaudiog.m4a"
+        subprocess.call(command_line2, stdout=FNULL, stderr=subprocess.STDOUT, shell=True)
+        print(WARNING + "\tDash segmentation" + ENDC)
+    else:
+        print(FAIL + "No audio to encode" + ENDC)
 
 @app.task
 def encode(bitrate, resolution):
@@ -181,6 +186,7 @@ def process():
     title = download_last_video()
     titled = title.replace(" ", "_")
     titled = titled.replace("|", "")
+
 
     os.mkdir("files/"+titled)
     # Thumbnail
