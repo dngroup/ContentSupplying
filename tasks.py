@@ -49,16 +49,18 @@ def get_video_size(input_file):
     raise AssertionError("failed to read video info from " + input_file)
 
 @app.task
-def download_last_video():
+def download_last_video(task):
     print(HEADER + "Download video" + ENDC)
 
-    # Subprocess get most recent video ID
-    #proc = subprocess.Popen(["python", "-c", "import ytsubs; ytsubs.do_it()"], stdout=subprocess.PIPE)
+    if(task == "latest"):
+        # Subprocess get most recent video ID
+        proc = subprocess.Popen(["python", "-c", "import ytsubs; ytsubs.do_it()"], stdout=subprocess.PIPE)
 
-    # Get out of the subprocess which is the video id
-    #out = proc.communicate()[0]
-    out = "BoRHLhIfBIs"
-    #print out
+        # Get out of the subprocess which is the video id
+        out = proc.communicate()[0]
+    else:
+        out = task
+        #print out
 
     # New pafy object with video ID
     v = pafy.new(out)
@@ -89,7 +91,7 @@ def encode_audio(time_ms, title):
 
     print(HEADER + "Audio encoding" + ENDC)
 
-    if(os.path.exists("files/audio.aac")):
+    if(os.path.exists("files/audio.m4a")):
         # ffmpeg -i input.m4a -c:a aac -strict -2 -force_key_frames expr:gte\(t,n_forced*4\) outaudio.m4a
         os.mkdir("files/"+title+"/audio")
         command_line = "ffmpeg -i files/audio.m4a -c:a aac -strict -2 -force_key_frames expr:gte\(t,n_forced*0.5\) files/outaudio.m4a"
@@ -177,13 +179,13 @@ def zipdir(path, ziph):
             ziph.write(os.path.join(root, file))
 
 @app.task
-def process():
+def process(task):
 
     clean()
 
     settings = get_settings("settings.ini")
 
-    title = download_last_video()
+    title = download_last_video(task)
     titled = title.replace(" ", "_")
     titled = titled.replace("|", "")
     titled = titled.replace("/", "")
