@@ -186,6 +186,7 @@ def process():
     title = download_last_video()
     titled = title.replace(" ", "_")
     titled = titled.replace("|", "")
+    titled = titled.replace("/", "")
 
 
     os.mkdir("files/"+titled)
