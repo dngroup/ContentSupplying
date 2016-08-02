@@ -179,17 +179,19 @@ def zipdir(path, ziph):
             ziph.write(os.path.join(root, file))
 
 @app.task
-def process(task):
+def process(task, test):
 
     clean()
 
     settings = get_settings("settings.ini")
-
-    title = download_last_video(task)
+    if test == False:
+        title = download_last_video(task)
+    else:
+        title = task[task.rindex("/")+1:task.rindex(".")]
+        copyfile(task, "files/inputr.mp4")
     titled = title.replace(" ", "_")
     titled = titled.replace("|", "")
     titled = titled.replace("/", "")
-
 
     os.mkdir("files/"+titled)
     # Thumbnail
