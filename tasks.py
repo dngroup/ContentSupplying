@@ -109,7 +109,10 @@ def encode_audio(time_ms, title):
 @app.task
 def encode(bitrate, resolution):
     # ffmpeg -i origin.mov -c:v libx264 -b:v 1000k -x264opts keyint=12:min-keyint=1:scenecut=-1 out.h264
-    command_line = "ffmpeg -y -i files/input.mp4 -i watermarks/"+resolution+"/"+bitrate+".png -filter_complex \"overlay=0:0\" -c:v libx264 -profile:v main -b:v " + bitrate + "k -x264opts keyint=12:min-keyint=12:scenecut=-1 -bf 0 -r 24 files/out" + bitrate + ".h264"
+    if os.path.exists("watermarks/"+resolution+"/"+bitrate+".png"):
+        command_line = "ffmpeg -y -i files/input.mp4 -i watermarks/"+resolution+"/"+bitrate+".png -filter_complex \"overlay=0:0\" -c:v libx264 -profile:v main -b:v " + bitrate + "k -x264opts keyint=12:min-keyint=12:scenecut=-1 -bf 0 -r 24 files/out" + bitrate + ".h264"
+    else:
+        command_line = "ffmpeg -y -i files/input.mp4 -c:v libx264 -profile:v main -b:v " + bitrate + "k -x264opts keyint=12:min-keyint=12:scenecut=-1 -bf 0 -r 24 files/out" + bitrate + ".h264"
     subprocess.call(command_line, stdout=FNULL, stderr=subprocess.STDOUT,  shell=True)
     print(OKGREEN + resolution + " - " + bitrate + "k encoded [OK]" + ENDC)
 
@@ -188,7 +191,11 @@ def process(task, test):
         title = download_last_video(task)
     else:
         title = task[task.rindex("/")+1:task.rindex(".")]
-        copyfile(task, "files/inputr.mp4")
+        copyfile(task, "files/file.mp4")
+        command_lineVid = "ffmpeg -y -i files/file.mp4 -vcodec copy -an files/inputr.mp4"
+        command_lineAud = "ffmpeg -y -i files/file.mp4 -acodec copy -vn files/audio.m4a"
+        subprocess.call(command_lineVid, stdout=FNULL, stderr=subprocess.STDOUT, shell=True)
+        subprocess.call(command_lineAud, stdout=FNULL, stderr=subprocess.STDOUT, shell=True)
     titled = title.replace(" ", "_")
     titled = titled.replace("|", "")
     titled = titled.replace("/", "")
@@ -199,7 +206,7 @@ def process(task, test):
 
     # Audio
     encode_audio("6000", titled)
-    
+
     #print settings.sections()
     print(HEADER + "Video encoding" + ENDC)
 
@@ -220,4 +227,3 @@ def process(task, test):
     zipdir("files/"+titled, zipf)
     zipf.close()
     print(HEADER + "Zipping files" + ENDC)
-
