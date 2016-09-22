@@ -1,1 +1,1 @@
-python -m tasks
+python main.py
