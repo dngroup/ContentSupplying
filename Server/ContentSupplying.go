@@ -88,7 +88,7 @@ func callCelery(title string){
         )
         failOnError(err, "Failed to declare a queue")
 
-        body := "{\"id\":\"" + u1.String() + "\",\"task\":\"worker.msEncoding\",\"args\":["+title+",http://"+myUrl+"/zip/"+title+".zip,http://"+myUrl+"/final/"+title+"]}"
+        body := "{\"id\":\"" + u1.String() + "\",\"task\":\"msstream_worker.msEncoding\",\"args\":[\""+title+"\",\"http://"+myUrl+"/zip/"+title+".zip\",\"http://"+myUrl+"/final/"+title+"\"]}"
 
         err = ch.Publish(
                 "",     // exchange

@@ -197,7 +197,5 @@ def main(argv):
             print "One stange error with youtube"
 
 
-    #return v.title
-
 if __name__ == "__main__":
    main(sys.argv[1:])

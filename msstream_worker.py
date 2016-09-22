@@ -5,13 +5,15 @@ import os
 import shutil
 from shutil import copyfile
 import subprocess
-import ConfigParser
+import configparser
 import zipfile
 import jsonpickle
+import requests
 from xml.dom import minidom
 
 # New celery worker connected to default RabbitMQ
 app = Celery('worker')
+app.config_from_object('celeryconfig')
 FNULL = open(os.devnull, 'w')
 HEADER = '\033[95m'
 OKBLUE = '\033[94m'
@@ -24,7 +26,7 @@ UNDERLINE = '\033[4m'
 
 @app.task
 def get_settings(file_settings):
-    settings = ConfigParser.ConfigParser()
+    settings = configparser.ConfigParser()
     settings.read(file_settings)
     return settings
 
@@ -117,7 +119,7 @@ def dash_segmentation2(files_mp4, time_ms, title):
     output=""
     for mp4file in files_mp4:
         output += "filesWorker/"+mp4file+" "
-    print "output = " + output
+    print("output = " + output)
     command_line = "MP4Box -dash " + time_ms + " -profile live -segment-name 'filesWorker/"+title+"/$Bandwidth$/out$Bandwidth$_dash$Number$' -out 'mpd.mpd' " + output
     print(command_line)
     subprocess.call(command_line, stdout=FNULL, stderr=subprocess.STDOUT, shell=True)
@@ -145,9 +147,7 @@ def delete_files():
     os.rename("filesWorker/" + node.getAttribute('bandwidth') + "/out" + node.getAttribute('bandwidth') + "_dash.mp4", "filesWorker/" + node.getAttribute('bandwidth') + "/init.mp4")
     shutil.move("filesWorker/" + node.getAttribute('bandwidth') + "/init.mp4", "filesWorker/init.mp4")
 
-
-
-
+@app.task
 def zipdir(path, ziph):
     # ziph is zipfile handle
     for root, dirs, files in os.walk(path):
@@ -156,40 +156,56 @@ def zipdir(path, ziph):
 
 @app.task
 def msEncoding(title,download_url,callback):
+    # create folder
+    directory = "filesWorker"
+    if not os.path.exists(directory):
+        os.makedirs(directory)
 
+    # get settings
     settings = get_settings("settings.ini")
 
-    zip_ref = zipfile.ZipFile("filesWorker/"+title, 'r')
+    # get zip
+    with open('filesWorker/'+title+'.zip', 'wb') as handle:
+        response = requests.get(download_url, stream=True)
+
+        if not response.ok:
+            print("Something went wrong")
+
+        for block in response.iter_content(1024):
+            handle.write(block)
+
+    # unzip
+    zip_ref = zipfile.ZipFile("filesWorker/"+title+".zip", 'r')
     zip_ref.extractall("filesWorker")
     zip_ref.close()
 
 
-    os.mkdir("filesWorker/"+title)
+
     # Thumbnail
-    thumbnail("filesWorker/video.mp4", title)
+    # thumbnail("filesWorker/video.mp4", title)
 
     # Audio
-    encode_audio("6000", title)
+    # encode_audio("6000", title)
 
-    #print settings.sections()
-    print(HEADER + "Video encoding" + ENDC)
-
-    for resolution in settings.sections():
-
-        set_resolution(resolution)
-
-        qualities = [e.strip() for e in settings.get(resolution, 'Bitrates').split(',')]
-        allQualities = []
-        for quality in qualities:
-            encode(quality, resolution)
-            remove_first_gop("filesWorker/out"+quality+".h264", quality)
-            mux("filesWorker/out"+quality+".h264",quality)
-            allQualities.append("'out"+quality+"g.mp4'")
-            #dash_segmentation("'out"+quality+"g.mp4'", "6000", titled)
-            #order_files(titled)
-
-    dash_segmentation2(allQualities, "6000", title)
-    zipf = zipfile.ZipFile("filesWorker/"+title+".zip", 'w', zipfile.ZIP_DEFLATED, allowZip64=True)
-    zipdir("filesWorker/"+title, zipf)
-    zipf.close()
+    # # Video
+    # print(HEADER + "Video encoding" + ENDC)
+    #
+    # for resolution in settings.sections():
+    #
+    #     set_resolution(resolution)
+    #
+    #     qualities = [e.strip() for e in settings.get(resolution, 'Bitrates').split(',')]
+    #     allQualities = []
+    #     for quality in qualities:
+    #         encode(quality, resolution)
+    #         remove_first_gop("filesWorker/out"+quality+".h264", quality)
+    #         mux("filesWorker/out"+quality+".h264",quality)
+    #         allQualities.append("'out"+quality+"g.mp4'")
+    #         #dash_segmentation("'out"+quality+"g.mp4'", "6000", titled)
+    #         #order_files(titled)
+    #
+    # dash_segmentation2(allQualities, "6000", title)
+    # zipf = zipfile.ZipFile("filesWorker/"+title+".zip", 'w', zipfile.ZIP_DEFLATED, allowZip64=True)
+    # zipdir("filesWorker/"+title, zipf)
+    # zipf.close()
     print(HEADER + "Zipping files" + ENDC)
