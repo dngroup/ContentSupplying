@@ -1,13 +1,11 @@
 from celery import Celery
 from pymediainfo import MediaInfo
-import pafy
 import os
 import shutil
 from shutil import copyfile
 import subprocess
 import configparser
 import zipfile
-import jsonpickle
 import requests
 from xml.dom import minidom
 
@@ -52,53 +50,57 @@ def encode_audio(time_ms, title):
 
     print(HEADER + "Audio encoding" + ENDC)
 
-    if(os.path.exists("filesWorker/audio.m4a")):
+    if(os.path.exists("filesWorker/"+title+"/audio.m4a")):
         # ffmpeg -i input.m4a -c:a aac -strict -2 -force_key_frames expr:gte\(t,n_forced*4\) outaudio.m4a
-        os.mkdir("filesWorker/"+title+"/audio")
-        command_line = "ffmpeg -i filesWorker/audio.m4a -c:a aac -strict -2 -force_key_frames expr:gte\(t,n_forced*0.5\) filesWorker/outaudio.m4a"
+
+        # Create folders
+        if not os.path.exists("filesWorker/"+title+"/audio"):
+            os.makedirs("filesWorker/"+title+"/audio")
+
+        command_line = "ffmpeg -i filesWorker/"+title+"/audio.m4a -c:a aac -strict -2 -force_key_frames expr:gte\(t,n_forced*0.5\) filesWorker/"+title+"/tmp/outaudio.m4a"
         subprocess.call(command_line, stdout=FNULL, stderr=subprocess.STDOUT, shell=True)
         print(WARNING + "\tEncoding" + ENDC)
-        command_line = "ffmpeg -i filesWorker/outaudio.m4a -ss 0.5 -c:a copy filesWorker/outaudiog.m4a"
-        #print(command_line)
+        command_line = "ffmpeg -i filesWorker/"+title+"/tmp/outaudio.m4a -ss 0.5 -c:a copy filesWorker/"+title+"/tmp/outaudiog.m4a"
+
         subprocess.call(command_line, stdout=FNULL, stderr=subprocess.STDOUT, shell=True)
-        command_line2 = "MP4Box -dash " + time_ms + " -profile live -segment-name 'out_dash$Number$' -out 'filesWorker/"+title+"/audio/mpd.mpd' filesWorker/outaudiog.m4a"
+        command_line2 = "MP4Box -dash " + time_ms + " -profile live -segment-name 'out_dash$Number$' -out 'filesWorker/"+title+"/audio/mpd.mpd' filesWorker/"+title+"/tmp/outaudiog.m4a"
         subprocess.call(command_line2, stdout=FNULL, stderr=subprocess.STDOUT, shell=True)
         print(WARNING + "\tDash segmentation" + ENDC)
     else:
         print(FAIL + "No audio to encode" + ENDC)
 
 @app.task
-def encode(bitrate, resolution):
+def encode(bitrate, resolution, title):
     # ffmpeg -i origin.mov -c:v libx264 -b:v 1000k -x264opts keyint=12:min-keyint=1:scenecut=-1 out.h264
     if os.path.exists("watermarks/"+resolution+"/"+bitrate+".png"):
-        command_line = "ffmpeg -y -i filesWorker/input.mp4 -i watermarks/"+resolution+"/"+bitrate+".png -filter_complex \"overlay=0:0\" -c:v libx264 -profile:v main -b:v " + bitrate + "k -x264opts keyint=12:min-keyint=12:scenecut=-1 -bf 0 -r 24 filesWorker/out" + bitrate + ".h264"
+        command_line = "ffmpeg -y -i filesWorker/"+title+"/tmp/input.mp4 -i watermarks/"+resolution+"/"+bitrate+".png -filter_complex \"overlay=0:0\" -c:v libx264 -profile:v main -b:v " + bitrate + "k -x264opts keyint=12:min-keyint=12:scenecut=-1 -bf 0 -r 24 filesWorker/"+title+"/tmp/out" + bitrate + ".h264"
     else:
-        command_line = "ffmpeg -y -i filesWorker/input.mp4 -c:v libx264 -profile:v main -b:v " + bitrate + "k -x264opts keyint=12:min-keyint=12:scenecut=-1 -bf 0 -r 24 filesWorker/out" + bitrate + ".h264"
+        command_line = "ffmpeg -y -i filesWorker/"+title+"/tmp/input.mp4 -c:v libx264 -profile:v main -b:v " + bitrate + "k -x264opts keyint=12:min-keyint=12:scenecut=-1 -bf 0 -r 24 filesWorker/"+title+"/tmp/out" + bitrate + ".h264"
     subprocess.call(command_line, stdout=FNULL, stderr=subprocess.STDOUT,  shell=True)
     print(OKGREEN + resolution + " - " + bitrate + "k encoded [OK]" + ENDC)
 
 @app.task
-def set_resolution(resolution):
+def set_resolution(resolution, title):
     # ffmpeg -i origin.mov -c:v libx264 -b:v 1000k -x264opts keyint=12:min-keyint=1:scenecut=-1 out.h264
 
-    if(get_video_size("filesWorker/video.mp4") == resolution):
-        copyfile("filesWorker/video.mp4", "filesWorker/input.mp4")
+    if(get_video_size("filesWorker/"+title+"/video.mp4") == resolution):
+        copyfile("filesWorker/"+title+"/video.mp4", "filesWorker/"+title+"/tmp/input.mp4")
         #os.rename("filesWorker/inputr.mp4", "filesWorker/input.mp4")
     else:
-        command_line = "ffmpeg -y -i filesWorker/inputr.mp4 -profile:v main -preset veryslow -b:v 10000k -vf scale="+resolution+" filesWorker/input.mp4"
+        command_line = "ffmpeg -y -i filesWorker/"+title+"/video.mp4 -profile:v main -preset veryslow -b:v 10000k -vf scale="+resolution+" filesWorker/"+title+"/tmp/input.mp4"
         subprocess.call(command_line, stdout=FNULL, stderr=subprocess.STDOUT, shell=True)
 
 @app.task
-def mux(file_h264, quality):
+def mux(file_h264, quality, title):
     # ffmpeg - f h264 - i filenam.264 - vcodec copy newfile.mp4
-    command_line = "ffmpeg -y -f h264 -i " + file_h264 + " -vcodec copy filesWorker/out" + quality + ".mp4"
+    command_line = "ffmpeg -y -f h264 -i " + file_h264 + " -vcodec copy filesWorker/"+title+"/tmp/out" + quality + ".mp4"
     #print(command_line)
     subprocess.call(command_line, stdout=FNULL, stderr=subprocess.STDOUT, shell=True)
 
 @app.task
-def remove_first_gop(file_h264, quality):
+def remove_first_gop(file_h264, quality, title):
     # ffmpeg -i inputfile.h264 -ss 0.5 -vcodec copy outputfile.h264
-    command_line = "ffmpeg -y -i " + file_h264 + " -ss 0.5 -vcodec copy filesWorker/out" + quality + "g.mp4"
+    command_line = "ffmpeg -y -f h264 -i " + file_h264 + " -ss 0.5 -vcodec copy filesWorker/"+title+"/tmp/out" + quality + "g.mp4"
     #print(command_line)
     subprocess.call(command_line, stdout=FNULL, stderr=subprocess.STDOUT, shell=True)
 
@@ -107,7 +109,7 @@ def remove_first_gop(file_h264, quality):
 def dash_segmentation(file_mp4, time_ms, title):
     # MP4Box version > 5.1
     # MP4Box -dash 6000 -profile live -segment-name '$Bandwidth$/out$Bandwidth$_dash$Number$' -out mpd.mpd inputfile.mp4
-    command_line = "MP4Box -dash " + time_ms + " -profile live -segment-name 'filesWorker/"+title+"/$Bandwidth$/out$Bandwidth$_dash$Number$' -out 'mpd.mpd' filesWorker/"+file_mp4
+    command_line = "MP4Box -dash " + time_ms + " -profile live -segment-name '$Bandwidth$/out$Bandwidth$_dash$Number$' -out 'mpd.mpd' filesWorker/"+file_mp4
     #print(command_line)
     subprocess.call(command_line, stdout=FNULL, stderr=subprocess.STDOUT, shell=True)
     print(OKGREEN + "\tDash segmentation [OK]" + ENDC)
@@ -116,11 +118,11 @@ def dash_segmentation(file_mp4, time_ms, title):
 def dash_segmentation2(files_mp4, time_ms, title):
     # MP4Box version > 5.1
     # MP4Box -dash 6000 -profile live -segment-name '$Bandwidth$/out$Bandwidth$_dash$Number$' -out mpd.mpd inputfile.mp4
-    output=""
+    input=""
     for mp4file in files_mp4:
-        output += "filesWorker/"+mp4file+" "
-    print("output = " + output)
-    command_line = "MP4Box -dash " + time_ms + " -profile live -segment-name 'filesWorker/"+title+"/$Bandwidth$/out$Bandwidth$_dash$Number$' -out 'mpd.mpd' " + output
+        input += mp4file+" "
+    print("input = " + input)
+    command_line = "MP4Box -dash " + time_ms + " -profile live -bs-switching no -segment-name '$Bandwidth$/out$Bandwidth$_dash$Number$' -out 'filesWorker/"+title+"/mpd.mpd' " + input
     print(command_line)
     subprocess.call(command_line, stdout=FNULL, stderr=subprocess.STDOUT, shell=True)
     print(OKGREEN + "\tDash segmentation [OK]" + ENDC)
@@ -135,6 +137,8 @@ def order_files(title):
 
     # os.rename("filesWorker/" + node.getAttribute('bandwidth') + "/out" + node.getAttribute('bandwidth') + "_dash.mp4", "filesWorker/" + node.getAttribute('bandwidth') + "/init.mp4")
     # shutil.move("filesWorker/" + node.getAttribute('bandwidth') + "/init.mp4", "filesWorker/init.mp4")
+
+
 
 @app.task
 def delete_files():
@@ -153,6 +157,11 @@ def zipdir(path, ziph):
     for root, dirs, files in os.walk(path):
         for file in files:
             ziph.write(os.path.join(root, file))
+
+@app.task
+def postContent(path, ytb_id, contentsupplying_url):
+    r = requests.post(contentsupplying_url, files={ytb_id: open(path, 'rb')})
+    return r
 
 @app.task
 def msEncoding(title,download_url,callback):
@@ -179,33 +188,49 @@ def msEncoding(title,download_url,callback):
     zip_ref.extractall("filesWorker")
     zip_ref.close()
 
-
+    # Init tmp
+    if not os.path.exists("filesWorker/" + title + "/tmp"):
+        os.makedirs("filesWorker/" + title + "/tmp")
 
     # Thumbnail
-    # thumbnail("filesWorker/video.mp4", title)
+    thumbnail("filesWorker/"+title+"/video.mp4", title)
 
     # Audio
-    # encode_audio("6000", title)
+    encode_audio("6000", title)
 
-    # # Video
-    # print(HEADER + "Video encoding" + ENDC)
-    #
-    # for resolution in settings.sections():
-    #
-    #     set_resolution(resolution)
-    #
-    #     qualities = [e.strip() for e in settings.get(resolution, 'Bitrates').split(',')]
-    #     allQualities = []
-    #     for quality in qualities:
-    #         encode(quality, resolution)
-    #         remove_first_gop("filesWorker/out"+quality+".h264", quality)
-    #         mux("filesWorker/out"+quality+".h264",quality)
-    #         allQualities.append("'out"+quality+"g.mp4'")
-    #         #dash_segmentation("'out"+quality+"g.mp4'", "6000", titled)
-    #         #order_files(titled)
-    #
-    # dash_segmentation2(allQualities, "6000", title)
-    # zipf = zipfile.ZipFile("filesWorker/"+title+".zip", 'w', zipfile.ZIP_DEFLATED, allowZip64=True)
-    # zipdir("filesWorker/"+title, zipf)
-    # zipf.close()
-    print(HEADER + "Zipping files" + ENDC)
+    # Video
+    print(HEADER + "Video encoding" + ENDC)
+    allQualities = []
+    for resolution in settings.sections():
+        set_resolution(resolution, title)
+
+        qualities = [e.strip() for e in settings.get(resolution, 'Bitrates').split(',')]
+
+        for quality in qualities:
+            encode(quality, resolution, title)
+            remove_first_gop("filesWorker/"+title+"/tmp/out"+quality+".h264", quality, title)
+            #mux("filesWorker/"+title+"/tmp/out"+quality+".h264",quality, title)
+            allQualities.append("filesWorker/"+title+"/tmp/"+"out"+quality+"g.mp4")
+            #dash_segmentation("'out"+quality+"g.mp4'", "6000", titled)
+            #order_files(titled)
+
+    dash_segmentation2(allQualities, "6000", title)
+
+    #zip result
+    os.remove("filesWorker/"+title+".zip")
+    shutil.rmtree("filesWorker/" + title + "/tmp")
+    os.remove("filesWorker/" + title + "/video.mp4")
+    os.remove("filesWorker/" + title + "/audio.m4a")
+
+    os.chdir("filesWorker")
+    zipf = zipfile.ZipFile(title+".zip", 'w', zipfile.ZIP_DEFLATED, allowZip64=True)
+    zipdir(title, zipf)
+    zipf.close()
+    os.chdir("..")
+
+    # callback
+    postContent("filesWorker/"+title+".zip",title, callback)
+
+    shutil.rmtree("filesWorker")
+
+    print(HEADER + "Job over" + ENDC)
