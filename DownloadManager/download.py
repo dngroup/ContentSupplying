@@ -130,17 +130,20 @@ def clean(dir):
 #
 ####################################################################################################
 def main(argv):
+    if not os.path.exists("files"):
+        os.makedirs("files")
+
     # Get args
     contentsupplying_url = "localhost:8085"
     try:
         opts, args = getopt.getopt(argv, "hc:")
     except getopt.GetoptError:
 
-        print WARNING + 'download.py -c <contentSupplying addr>' + ENDC
+        print WARNING + 'download.py -c <contentSupplying addr> (default: localhost:8085)' + ENDC
         sys.exit(2)
     for opt, arg in opts:
         if opt == '-h':
-            print WARNING + 'download.py -c <contentSupplying addr>' + ENDC
+            print WARNING + 'download.py -c <contentSupplying addr> (default: localhost:8085)' + ENDC
             sys.exit()
         elif opt == "-c":
             contentsupplying_url = arg

@@ -88,7 +88,7 @@ func callCelery(title string){
         )
         failOnError(err, "Failed to declare a queue")
 
-        body := "{\"id\":\"" + u1.String() + "\",\"task\":\"msstream_worker.msEncoding\",\"args\":[\""+title+"\",\"http://"+myUrl+"/zip/"+title+".zip\",\"http://"+myUrl+"/final/"+title+"\"]}"
+        body := "{\"id\":\"" + u1.String() + "\",\"task\":\"msstream_worker.msEncoding\",\"args\":[\""+title+"\",\"http://"+myUrl+"/settings/settings.ini\",\"http://"+myUrl+"/zip/"+title+".zip\",\"http://"+myUrl+"/final/"+title+"\"]}"
 
         err = ch.Publish(
                 "",     // exchange
@@ -178,7 +178,7 @@ func handleRawContent(res http.ResponseWriter, req *http.Request) {
 			http.Error(res, err.Error(), http.StatusInternalServerError)
 			return
 		}
-
+		callCelery(ytb_id)
 		// Return success
 		res.WriteHeader(http.StatusCreated)
 		fmt.Fprint(res)
@@ -242,7 +242,7 @@ func handleCeleryCall(res http.ResponseWriter, req *http.Request) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 func main() {
 	// Cli
-	flag.StringVar(&rootPath, "f","../filesServer/","path of the folder containing the contents, ending with '/'")
+	flag.StringVar(&rootPath, "f","./filesServer/","path of the folder containing the contents, ending with '/'")
 	flag.StringVar(&myUrl, "a","localhost:8085","public address and port of the current server")
 	flag.StringVar(&brokerUrl, "b","localhost:5672","Url of the rabbitMQ broker")
 	flag.Parse()
@@ -254,6 +254,8 @@ func main() {
 
 	// Server creation
 	router := mux.NewRouter()
+	settings := http.StripPrefix("/settings", http.FileServer(http.Dir("./settings/")))
+    	router.PathPrefix("/settings/").Handler(settings)
 	s := http.StripPrefix("/zip/", http.FileServer(http.Dir(rootPath + "/zip/")))
     	router.PathPrefix("/zip/").Handler(s)
 	router.HandleFunc("/content", handleContent).Methods("POST")

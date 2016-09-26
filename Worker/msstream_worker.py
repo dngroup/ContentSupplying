@@ -49,7 +49,7 @@ def thumbnail(file_mp4, title):
 def encode_audio(time_ms, title):
 
     print(HEADER + "Audio encoding" + ENDC)
-
+    response=""
     if(os.path.exists("filesWorker/"+title+"/audio.m4a")):
         # ffmpeg -i input.m4a -c:a aac -strict -2 -force_key_frames expr:gte\(t,n_forced*4\) outaudio.m4a
 
@@ -63,11 +63,14 @@ def encode_audio(time_ms, title):
         command_line = "ffmpeg -i filesWorker/"+title+"/tmp/outaudio.m4a -ss 0.5 -c:a copy filesWorker/"+title+"/tmp/outaudiog.m4a"
 
         subprocess.call(command_line, stdout=FNULL, stderr=subprocess.STDOUT, shell=True)
-        command_line2 = "MP4Box -dash " + time_ms + " -profile live -segment-name 'out_dash$Number$' -out 'filesWorker/"+title+"/audio/mpd.mpd' filesWorker/"+title+"/tmp/outaudiog.m4a"
-        subprocess.call(command_line2, stdout=FNULL, stderr=subprocess.STDOUT, shell=True)
+        #command_line2 = "MP4Box -dash " + time_ms + " -profile live -segment-name 'out_dash$Number$' -out 'filesWorker/"+title+"/audio/mpd.mpd' filesWorker/"+title+"/tmp/outaudiog.m4a"
+        #subprocess.call(command_line2, stdout=FNULL, stderr=subprocess.STDOUT, shell=True)
         print(WARNING + "\tDash segmentation" + ENDC)
+        response = "filesWorker/"+title+"/tmp/outaudiog.m4a"
     else:
         print(FAIL + "No audio to encode" + ENDC)
+
+    return response
 
 @app.task
 def encode(bitrate, resolution, title):
@@ -164,14 +167,23 @@ def postContent(path, ytb_id, contentsupplying_url):
     return r
 
 @app.task
-def msEncoding(title,download_url,callback):
+def msEncoding(title,settings_url,download_url,callback):
     # create folder
     directory = "filesWorker"
     if not os.path.exists(directory):
         os.makedirs(directory)
 
     # get settings
-    settings = get_settings("settings.ini")
+    with open('filesWorker/settings.ini', 'wb') as handle:
+        response = requests.get(settings_url, stream=True)
+
+        if not response.ok:
+            print("Something went wrong")
+
+        for block in response.iter_content(1024):
+            handle.write(block)
+    settings = get_settings("filesWorker/settings.ini")
+    os.remove("filesWorker/settings.ini")
 
     # get zip
     with open('filesWorker/'+title+'.zip', 'wb') as handle:
@@ -196,11 +208,12 @@ def msEncoding(title,download_url,callback):
     thumbnail("filesWorker/"+title+"/video.mp4", title)
 
     # Audio
-    encode_audio("6000", title)
+    audiofile = encode_audio("6000", title)
 
     # Video
     print(HEADER + "Video encoding" + ENDC)
     allQualities = []
+    allQualities.append(audiofile)
     for resolution in settings.sections():
         set_resolution(resolution, title)
 

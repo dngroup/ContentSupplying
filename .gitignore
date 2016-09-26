@@ -13,7 +13,8 @@
 *.mpd
 *.temp
 *.zip
-*.png
+thumbnail.png
+infos.json
 
 # Python
 *.pyc
