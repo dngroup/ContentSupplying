@@ -1,4 +1,6 @@
-BROKER_URL = 'amqp://guest@localhost/'
+import os
+
+BROKER_URL = 'amqp://guest@'+os.getenv("BROKER_ADDR")+'/'
 CELERY_RESULT_BACKEND = 'rpc://'
 
 CELERY_TASK_SERIALIZER = 'json'

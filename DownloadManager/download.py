@@ -25,11 +25,11 @@ my_channel = 'UCjVRF7iMB-35SB6mVMSeHiA'
 
 # check for missing inputs
 if not my_key:
-  print "YOUTUBE API KEY is wrong or missing."
+  print("YOUTUBE API KEY is wrong or missing.")
   sys.exit(-1)
 
 if not len(sys.argv) >= 0:
-  print "Channel ID and (optionally) destination file must be specified as first and second arguments."
+  print("Channel ID and (optionally) destination file must be specified as first and second arguments.")
   sys.exit(-1)
 
 def get_channel_for_user(user):
@@ -139,11 +139,11 @@ def main(argv):
         opts, args = getopt.getopt(argv, "hc:")
     except getopt.GetoptError:
 
-        print WARNING + 'download.py -c <contentSupplying addr> (default: localhost:8085)' + ENDC
+        print(WARNING + 'download.py -c <contentSupplying addr> (default: localhost:8085)' + ENDC)
         sys.exit(2)
     for opt, arg in opts:
         if opt == '-h':
-            print WARNING + 'download.py -c <contentSupplying addr> (default: localhost:8085)' + ENDC
+            print(WARNING + 'download.py -c <contentSupplying addr> (default: localhost:8085)' + ENDC)
             sys.exit()
         elif opt == "-c":
             contentsupplying_url = arg
@@ -159,13 +159,13 @@ def main(argv):
 
     # Get youtube last videos
     items = getNewItems()
-    print "Items: " + jsonpickle.encode(items)
+    print("Items: " + jsonpickle.encode(items))
     newItemsString = postItems(items,contentsupplying_url)
-    print "New Items: " + newItemsString
+    print("New Items: " + newItemsString)
     newItems = jsonpickle.decode(newItemsString)
 
     for new in newItems:
-        print "New video: " + new
+        print("New video: " + new)
         try:
             # New pafy object with video ID
             v = pafy.new(new)
@@ -197,7 +197,10 @@ def main(argv):
             os.chdir("..")
             postContent("files/zip/" + new + ".zip", new, contentsupplying_url)
         except :
-            print "One stange error with youtube"
+            print("One stange error with youtube")
+
+
+    shutil.rmtree("files")
 
 
 if __name__ == "__main__":
