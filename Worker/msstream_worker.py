@@ -60,7 +60,7 @@ def encode_audio(time_ms, title):
         command_line = "ffmpeg -i filesWorker/"+title+"/audio.m4a -c:a aac -strict -2 -force_key_frames expr:gte\(t,n_forced*0.5\) filesWorker/"+title+"/tmp/outaudio.m4a"
         subprocess.call(command_line, stdout=FNULL, stderr=subprocess.STDOUT, shell=True)
         print(WARNING + "\tEncoding" + ENDC)
-        command_line = "ffmpeg -i filesWorker/"+title+"/tmp/outaudio.m4a -ss 0.5 -c:a copy filesWorker/"+title+"/tmp/outaudiog.m4a"
+        command_line = "ffmpeg -i filesWorker/"+title+"/tmp/outaudio.m4a -ss 1 -c:a copy filesWorker/"+title+"/tmp/outaudiog.m4a"
 
         subprocess.call(command_line, stdout=FNULL, stderr=subprocess.STDOUT, shell=True)
         #command_line2 = "MP4Box -dash " + time_ms + " -profile live -segment-name 'out_dash$Number$' -out 'filesWorker/"+title+"/audio/mpd.mpd' filesWorker/"+title+"/tmp/outaudiog.m4a"
