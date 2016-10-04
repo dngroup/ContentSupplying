@@ -133,10 +133,12 @@ def main(argv):
     if not os.path.exists("files"):
         os.makedirs("files")
 
+    getAllNew = True
+
     # Get args
     contentsupplying_url = "localhost:8085"
     try:
-        opts, args = getopt.getopt(argv, "hc:")
+        opts, args = getopt.getopt(argv, "hc:i:")
     except getopt.GetoptError:
 
         print(WARNING + 'download.py -c <contentSupplying addr> (default: localhost:8085)' + ENDC)
@@ -147,6 +149,11 @@ def main(argv):
             sys.exit()
         elif opt == "-c":
             contentsupplying_url = arg
+        elif opt == "-i":
+            getAllNew = False
+            newItems = [arg]
+
+    print(opts)
 
     # clean folder
     clean("files")
@@ -158,11 +165,12 @@ def main(argv):
     print(HEADER + "Download video" + ENDC)
 
     # Get youtube last videos
-    items = getNewItems()
-    print("Items: " + jsonpickle.encode(items))
-    newItemsString = postItems(items,contentsupplying_url)
-    print("New Items: " + newItemsString)
-    newItems = jsonpickle.decode(newItemsString)
+    if getAllNew:
+        items = getNewItems()
+        print("Items: " + jsonpickle.encode(items))
+        newItemsString = postItems(items,contentsupplying_url)
+        print("New Items: " + newItemsString)
+        newItems = jsonpickle.decode(newItemsString)
 
     for new in newItems:
         print("New video: " + new)

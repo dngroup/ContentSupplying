@@ -3,6 +3,7 @@ MAINTAINER mlacaud@viotech.net
 
 RUN apk add --no-cache git
 RUN apk add --no-cache unzip
+RUN apk add --no-cache p7zip
 RUN go get github.com/gorilla/mux
 RUN go get github.com/satori/go.uuid
 RUN go get github.com/streadway/amqp
