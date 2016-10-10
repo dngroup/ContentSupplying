@@ -9,6 +9,7 @@ RUN apt-get install gpac -y
 RUN apt-get install python3 -y
 RUN apt-get install python3-setuptools -y
 RUN apt-get install python3-pip -y
+RUN apt-get install zip -y
 
 RUN pip3 install Celery
 RUN pip3 install configparser

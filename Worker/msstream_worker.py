@@ -54,8 +54,8 @@ def encode_audio(time_ms, title):
         # ffmpeg -i input.m4a -c:a aac -strict -2 -force_key_frames expr:gte\(t,n_forced*4\) outaudio.m4a
 
         # Create folders
-        if not os.path.exists("filesWorker/"+title+"/audio"):
-            os.makedirs("filesWorker/"+title+"/audio")
+        #if not os.path.exists("filesWorker/"+title+"/audio"):
+            #os.makedirs("filesWorker/"+title+"/audio")
 
         command_line = "ffmpeg -i filesWorker/"+title+"/audio.m4a -c:a aac -strict -2 -force_key_frames expr:gte\(t,n_forced*0.5\) filesWorker/"+title+"/tmp/outaudio.m4a"
         subprocess.call(command_line, stdout=FNULL, stderr=subprocess.STDOUT, shell=True)
@@ -162,6 +162,11 @@ def zipdir(path, ziph):
             ziph.write(os.path.join(root, file))
 
 @app.task
+def zipusinglinux(path, dest):
+    command_line = "zip -r " + dest + " " + path
+    subprocess.call(command_line, stdout=FNULL, stderr=subprocess.STDOUT, shell=True)
+
+@app.task
 def postContent(path, ytb_id, contentsupplying_url):
     r = requests.post(contentsupplying_url, files={ytb_id: open(path, 'rb')})
     return r
@@ -236,9 +241,10 @@ def msEncoding(title,settings_url,download_url,callback):
     os.remove("filesWorker/" + title + "/audio.m4a")
 
     os.chdir("filesWorker")
-    zipf = zipfile.ZipFile(title+".zip", 'w', zipfile.ZIP_DEFLATED, allowZip64=True)
-    zipdir(title, zipf)
-    zipf.close()
+    #zipf = zipfile.ZipFile(title+".zip", 'w', zipfile.ZIP_DEFLATED, allowZip64=True)
+    #zipdir(title, zipf)
+    #zipf.close()
+    zipusinglinux(title, title + '.zip');
     os.chdir("..")
 
     # callback
