@@ -7,6 +7,8 @@ import subprocess
 import configparser
 import zipfile
 import requests
+import urllib
+
 from xml.dom import minidom
 
 # New celery worker connected to default RabbitMQ
@@ -168,7 +170,13 @@ def zipusinglinux(path, dest):
 
 @app.task
 def postContent(path, ytb_id, contentsupplying_url):
-    r = requests.post(contentsupplying_url, files={ytb_id: open(path, 'rb')})
+
+    headers = {
+        'content-type': 'application/zip',
+        'Content-Disposition': 'attachment; filename="'+ytb_id+'"',
+    }
+    with open(path,'br') as f:
+        r = requests.post(contentsupplying_url,data=f,headers=headers)
     return r
 
 @app.task
