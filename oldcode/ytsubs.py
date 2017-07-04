@@ -7,6 +7,7 @@ import json
 import itertools
 import os
 import sys
+import jsonpickle
 from xml.etree.ElementTree import Element, SubElement, Comment, tostring
 
 baseurl = 'https://www.googleapis.com/youtube/v3'

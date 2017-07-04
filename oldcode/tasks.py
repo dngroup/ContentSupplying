@@ -7,6 +7,7 @@ from shutil import copyfile
 import subprocess
 import ConfigParser
 import zipfile
+import jsonpickle
 from xml.dom import minidom
 
 # New celery worker connected to default RabbitMQ
@@ -60,7 +61,7 @@ def download_last_video(task):
         out = proc.communicate()[0]
     else:
         out = task
-        #print out
+        #print "out = " + out
 
     # New pafy object with video ID
     v = pafy.new(out)
@@ -151,17 +152,29 @@ def dash_segmentation(file_mp4, time_ms, title):
     subprocess.call(command_line, stdout=FNULL, stderr=subprocess.STDOUT, shell=True)
     print(OKGREEN + "\tDash segmentation [OK]" + ENDC)
 
+@app.task
+def dash_segmentation2(files_mp4, time_ms, title):
+    # MP4Box version > 5.1
+    # MP4Box -dash 6000 -profile live -segment-name '$Bandwidth$/out$Bandwidth$_dash$Number$' -out mpd.mpd inputfile.mp4
+    output=""
+    for mp4file in files_mp4:
+        output += "files/"+mp4file+" "
+    print "output = " + output
+    command_line = "MP4Box -dash " + time_ms + " -profile live -segment-name 'files/"+title+"/$Bandwidth$/out$Bandwidth$_dash$Number$' -out 'mpd.mpd' " + output
+    print(command_line)
+    subprocess.call(command_line, stdout=FNULL, stderr=subprocess.STDOUT, shell=True)
+    print(OKGREEN + "\tDash segmentation [OK]" + ENDC)
 
 @app.task
 def order_files(title):
     xmldoc = minidom.parse('mpd.mpd')
     rep = xmldoc.getElementsByTagName('Representation')
     for node in rep:
-        #print(node.getAttribute('bandwidth'))
+        # print(node.getAttribute('bandwidth'))
         shutil.move("mpd.mpd", "files/"+title+"/" + node.getAttribute('bandwidth') + "/mpd.mpd")
 
-    #os.rename("files/" + node.getAttribute('bandwidth') + "/out" + node.getAttribute('bandwidth') + "_dash.mp4", "files/" + node.getAttribute('bandwidth') + "/init.mp4")
-    #shutil.move("files/" + node.getAttribute('bandwidth') + "/init.mp4", "files/init.mp4")
+    # os.rename("files/" + node.getAttribute('bandwidth') + "/out" + node.getAttribute('bandwidth') + "_dash.mp4", "files/" + node.getAttribute('bandwidth') + "/init.mp4")
+    # shutil.move("files/" + node.getAttribute('bandwidth') + "/init.mp4", "files/init.mp4")
 
 @app.task
 def delete_files():
@@ -215,15 +228,17 @@ def process(task, test):
         set_resolution(resolution)
 
         qualities = [e.strip() for e in settings.get(resolution, 'Bitrates').split(',')]
-
+        allQualities = []
         for quality in qualities:
             encode(quality, resolution)
             remove_first_gop("files/out"+quality+".h264", quality)
             mux("files/out"+quality+".h264",quality)
-            dash_segmentation("'out"+quality+"g.mp4'", "6000", titled)
-            order_files(titled)
+            allQualities.append("'out"+quality+"g.mp4'")
+            #dash_segmentation("'out"+quality+"g.mp4'", "6000", titled)
+            #order_files(titled)
 
-    zipf = zipfile.ZipFile("files/"+titled+".zip", 'w', zipfile.ZIP_DEFLATED)
+    dash_segmentation2(allQualities, "6000", titled)
+    zipf = zipfile.ZipFile("files/"+titled+".zip", 'w', zipfile.ZIP_DEFLATED, allowZip64=True)
     zipdir("files/"+titled, zipf)
     zipf.close()
     print(HEADER + "Zipping files" + ENDC)
