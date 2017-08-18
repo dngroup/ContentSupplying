@@ -106,10 +106,16 @@ func callCelery(title string){
 
 func unzip(path, outpath string){
 	err := exec.Command("unzip",path,"-d",outpath).Run()
-
+	//err := exec.Command("7z","x",path,"-y","-o"+outpath, "-r").Run()
 	if err != nil {
 		fmt.Fprintln(os.Stdout, err)
 	}
+
+	/*err2 := exec.Command("chmod","755","-R",outpath).Run()
+
+	if err2 != nil {
+		fmt.Fprintln(os.Stdout, err)
+	}*/
 }
 
 

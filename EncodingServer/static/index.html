@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MS Encoding</title>
+</head>
+<body>
+
+<form method="post" action="/api/encode" enctype="multipart/form-data">
+    <p>Video Id: <input type="text" name="videoId" value="IdTest"></p>
+    <p>Bitrate: <input type="number" name="bitrate" min="500" max="6000" value="2000"></p>
+    <p>Width: <input type="number" name="width" min="720" max="1920" value="1080"></p>
+    <p>Height: <input type="number" name="height" min="480" max="1080" value="720"></p>
+    <p>fps: <input type="number" name="fps" min="20" max="60" value="24"></p>
+    <p>Segment Duration: <input type="number" name="segmentDuration" min="2" max="30" value="6"></p>
+    <p>GoP Number: <input type="number" name="gopSize" min="1" max="50" value="12"></p>
+    <p><input type="file" name="fileUploaded"/></p>
+    <p><input type="submit"></p>
+</form>
+
+
+</body>
+</html>
