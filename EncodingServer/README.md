@@ -113,3 +113,11 @@ GPAC Copyright (c) Telecom ParisTech 2000-2012
 GPAC Configuration: --build=x86_64-linux-gnu --prefix=/usr --includedir=${prefix}/include --mandir=${prefix}/share/man --infodir=${prefix}/share/info --sysconfdir=/etc --localstatedir=/var --disable-silent-rules --libdir=${prefix}/lib/x86_64-linux-gnu --libexecdir=${prefix}/lib/x86_64-linux-gnu --disable-maintainer-mode --disable-dependency-tracking --prefix=/usr --libdir=lib/x86_64-linux-gnu --mandir=${prefix}/share/man --extra-cflags=-Wall -fPIC -DPIC -I/usr/include/mozjs -DXP_UNIX -Wdate-time -D_FORTIFY_SOURCE=2 -g -O2 -fstack-protector-strong -Wformat -Werror=format-security --extra-ldflags=-Wl,-Bsymbolic-functions -Wl,-z,relro --enable-joystick --enable-debug --disable-ssl --verbose
 Features: GPAC_64_BITS GPAC_HAS_JPEG GPAC_HAS_PNG
 ```
+
+## Docker
+
+The docker image is **msstream/encodingservice**. The encoding service can be launched using :
+
+```
+docker run --rm -d -p 8080:8080 --name=encodingservice  -v /path/to/destination/folder/:/encoding/contents/ msstream/encodingservice
+```

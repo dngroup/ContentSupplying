@@ -1,6 +1,7 @@
 const { spawn } = require('child_process');
 var filesservice = require('./files.service');
 var {EncodingState} = require('../models/encodingstate');
+var {FolderPath} = require('../models/folderpath');
 
 function encodeVideo(videoId, encodingParameters) {
     //Get Path
@@ -89,20 +90,21 @@ function videoEncoding(currentIndex, encodingParameters, fo, listOfFiles, taskEx
 
         // Next encoding
         if (currentIndex + 1 < encodingParameters.length) {
-            videoEncoding(currentIndex + 1, encodingParameters, taskExecuted);
+            var newIndex = currentIndex + 1;
+            console.log('New index = ' + newIndex);
+            console.log(encodingParameters);
+            console.log(encodingParameters[newIndex]);
+            videoEncoding(newIndex, encodingParameters, fo, listOfFiles, taskExecuted);
         }
     });
 }
 
 function folderObjectCreation(videoId) {
     var folderPath = filesservice.createPathForFolder(videoId);
-    var result = {
-        folderPath: folderPath,
-        tmpPath: folderPath + '/tmp',
-        statePath: folderPath + '/state.json',
-        encodedPath: folderPath + '/' + videoId,
-        videoPath: folderPath + '/' + filesservice.getVideosInPath(folderPath)[0]
+    var obj = {
+        folderPath: folderPath
     };
+    var result = new FolderPath(obj, videoId);
     filesservice.createPathIfNotExist(result.tmpPath);
 
     return result;

@@ -74,6 +74,7 @@ module.exports = {
                 file.pipe(fstream);
                 fstream.on('close', function () {
                     encodingList.push(new EncodingParameter(encodingObject));
+                    encodingList.push(new EncodingParameter({}));
                     encodingservice.encodeVideo(videoId, encodingList);
                     res.redirect('back');
                 });
