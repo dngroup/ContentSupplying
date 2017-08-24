@@ -58,11 +58,16 @@ function writeJson(path, obj) {
     fs.writeFileSync(path, json);
 }
 
+function getDefaultPath() {
+    return defaultPath;
+}
+
 module.exports = {
     createPathIfNotExist: createPathIfNotExist,
     createPathForFolder: createPathForFolder,
     getVideosInPath: getVideosInPath,
     getFoldersInPath: getFoldersInPath,
     readJson: readJson,
-    writeJson: writeJson
+    writeJson: writeJson,
+    getDefaultPath: getDefaultPath
 };

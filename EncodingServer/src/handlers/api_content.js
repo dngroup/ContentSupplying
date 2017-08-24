@@ -2,9 +2,11 @@
  * Created by mlacaud on 14/08/17.
  */
 var {EncodingParameter} = require('../models/encodingparameter');
+var {VideoInfo} = require('../models/videoinfo');
 var fs = require('fs');
 var fileservice = require('../services/files.service');
 var encodingservice = require('../services/encoding.service');
+var queueservice = require('../services/queue.service');
 
 module.exports = {
     addApi: function (app) {
@@ -53,6 +55,26 @@ module.exports = {
             res.send(result);
         });
 
+        /**
+         *   Get the encoding queue
+         *
+         */
+        app.get('/api/encode/queue', function (req, res) {
+            var result = queueservice.readQueue();
+
+            res.send(result);
+        });
+
+        /**
+         * Clean the queue
+         *
+         */
+        app.delete('/api/encode/queue', function (req, res) {
+            var result = queueservice.cleanQueue();
+
+            res.send(result);
+        });
+
 
         /**
          *   Post a video and store them in the filesystem, return the videoId
@@ -62,7 +84,8 @@ module.exports = {
             var videoId = "default";
             var path;
             var encodingList = [];
-            var encodingObject = {};
+            var infos = new VideoInfo({});
+            //var encodingObject = {};
 
             req.pipe(req.busboy);
 
@@ -73,19 +96,32 @@ module.exports = {
                 var fstream = fs.createWriteStream(path + '/' + filename);
                 file.pipe(fstream);
                 fstream.on('close', function () {
-                    encodingList.push(new EncodingParameter(encodingObject));
-                    encodingList.push(new EncodingParameter({}));
-                    encodingservice.encodeVideo(videoId, encodingList);
+                    //encodingList.push(new EncodingParameter(encodingObject));
+                    //encodingList.push(new EncodingParameter({}));
+                    fileservice.writeJson(path + '/infos.json', infos);
+                    encodingList = encodingservice.getEncodingParameters();
+                    queueservice.saveNewJob(videoId, encodingList);
+                    //encodingservice.encodeVideo(videoId, encodingList);
                     res.redirect('back');
                 });
             });
 
             // Get parameters
             req.busboy.on('field', function(fieldname, val, fieldnameTruncated, valTruncated, encoding, mimetype) {
-                if(fieldname === "videoId" && val && val !== "") {
-                    videoId = val;
-                } else {
-                    encodingObject[fieldname] = parseInt(val);
+                switch (fieldname) {
+                    case 'videoId':
+                        videoId = val;
+                        infos.ytb_id = val;
+                        break;
+                    case 'title':
+                        infos.title = val;
+                        break;
+                    case 'author':
+                        infos.author = val;
+                        break;
+                    case 'description':
+                        infos.description = val;
+                        break;
                 }
             });
         });

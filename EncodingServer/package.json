@@ -8,7 +8,7 @@
     "start": "node src/index.js",
     "docker:build": "docker build -t msstream/encodingservice .",
     "docker:push": "docker push msstream/encodingservice",
-    "docker:run": "docker run --rm -d -p 8080:8080 --name=encodingservice msstream/encodingservice",
+    "docker:run": "docker run -d -p 8080:8080 --name=encodingservice msstream/encodingservice",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "mlacaud",

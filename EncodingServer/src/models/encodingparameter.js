@@ -25,7 +25,6 @@ class EncodingParameter {
         this.segmentDuration = obj.segmentDuration || defaultSegmentDuration;
         this.gopSize = obj.gopSize || defaultGopSize;
     }
-
 }
 
 exports.EncodingParameter = EncodingParameter;

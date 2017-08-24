@@ -3,7 +3,8 @@ var express = require('express'),
     url = require('url'),
     api_encoding = require('./handlers/api_content'),
     flagsservice = require('./services/flags.service'),
-    encodingservice = require('./services/encoding.service');
+    encodingservice = require('./services/encoding.service'),
+    queueservice = require('./services/queue.service');
 var {EncodingParameter} = require('./models/encodingparameter');
 var busboy = require('connect-busboy');
 
@@ -24,6 +25,9 @@ app.use(express.static('static'));
 // Add /api/encoding functions
 app = api_encoding.addApi(app);
 
+
+queueservice.cleanQueue();
+queueservice.startWatcher();
 
 var server = app.listen(flags.port, function () {
     var host = server.address().address;

@@ -1,6 +1,7 @@
 const { spawn } = require('child_process');
 var filesservice = require('./files.service');
 var {EncodingState} = require('../models/encodingstate');
+var {EncodingParameter} = require('../models/encodingparameter');
 var {FolderPath} = require('../models/folderpath');
 
 function encodeVideo(videoId, encodingParameters) {
@@ -38,6 +39,7 @@ function encodeVideo(videoId, encodingParameters) {
 function segmentation(encodingParameters, fo, listOfFiles, taskExecuted) {
     var duration = encodingParameters[0].segmentDuration * 1000;
     var destMPD = fo.encodedPath + "/mpd.mpd";
+    var queueservice = require('./queue.service');
     filesservice.createPathIfNotExist(fo.encodedPath);
     var args = ["-dash", duration, "-profile", "live", "-bs-switching", "no", "-segment-name",
         "$Bandwidth$/out$Bandwidth$_dash$Number$", "-out", destMPD].concat(listOfFiles);
@@ -50,10 +52,12 @@ function segmentation(encodingParameters, fo, listOfFiles, taskExecuted) {
             taskExecuted += 1;
             state.isReady = true;
             state.percentOfCompletion = Math.floor((taskExecuted / (encodingParameters.length + 2)) * 100);
+
         } else {
             state.failures.push("Segmentation failed");
         }
         filesservice.writeJson(fo.statePath, state);
+        queueservice.removeFromQueue(fo.videoId);
         console.log('End of segmentation, code: ' + code);
     });
 }
@@ -92,24 +96,54 @@ function videoEncoding(currentIndex, encodingParameters, fo, listOfFiles, taskEx
         if (currentIndex + 1 < encodingParameters.length) {
             var newIndex = currentIndex + 1;
             console.log('New index = ' + newIndex);
-            console.log(encodingParameters);
             console.log(encodingParameters[newIndex]);
             videoEncoding(newIndex, encodingParameters, fo, listOfFiles, taskExecuted);
         }
     });
+
+    /*process.stdout.on('data', (data) => {
+        console.log(`stdout: ${data}`);
+    });
+
+    process.stderr.on('data', (data) => {
+        console.log(`stderr: ${data}`);
+    });*/
+}
+
+function getEncodingParameters() {
+    var objs = [{
+        bitrate: 1200,
+        width: 848,
+        height: 480
+    },{
+        bitrate: 3000,
+        width: 1280,
+        height: 720
+    },{
+        bitrate: 5000,
+        width: 1920,
+        height: 1080
+    }];
+
+    var result = [];
+    for (var i = 0; i < objs.length; i++) {
+        result.push(new EncodingParameter(objs[i]));
+    }
+
+    return result;
 }
 
 function folderObjectCreation(videoId) {
-    var folderPath = filesservice.createPathForFolder(videoId);
     var obj = {
-        folderPath: folderPath
+        videoId: videoId
     };
-    var result = new FolderPath(obj, videoId);
+    var result = new FolderPath(obj);
     filesservice.createPathIfNotExist(result.tmpPath);
 
     return result;
 }
 
 module.exports = {
-    encodeVideo: encodeVideo
+    encodeVideo: encodeVideo,
+    getEncodingParameters: getEncodingParameters
 };

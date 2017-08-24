@@ -6,6 +6,7 @@ var filesservice = require("../services/files.service");
 /**
  * FolderPath
  *
+ * {string} videoId
  * {string} folderPath
  * {string} tmpPath
  * {string} statePath
@@ -15,15 +16,18 @@ var filesservice = require("../services/files.service");
  *
  */
 class FolderPath {
-    constructor(obj, videoId) {
-        var defaultFolderPath = "./contents/" + videoId;
+    constructor(obj) {
+        this.videoId = obj.videoId || 'default';
+
+        var defaultFolderPath = "./contents/" + this.videoId;
 
         this.folderPath =  obj.folderPath || defaultFolderPath;
         this.tmpPath = obj.tmpPath || this.folderPath + '/tmp';
         this.statePath = obj.statePath || this.folderPath + '/state.json';
-        this.encodedPath =  obj.encodedPath || this.folderPath + '/' + videoId;
+        this.encodedPath =  obj.encodedPath || this.folderPath + '/' + this.videoId;
         this.videoPath = obj.videoPath || this.folderPath + '/' + filesservice.getVideosInPath(this.folderPath)[0];
-        this.archivePath = obj.archivePath || this.folderPath + '/' + videoId + ".zip";
+        this.archivePath = obj.archivePath || this.folderPath + '/' + this.videoId + ".zip";
+        this.queuePath = obj.queuePath || filesservice.getDefaultPath() + '/queue.json';
     }
 }
 
