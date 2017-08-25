@@ -56,10 +56,30 @@ function segmentation(encodingParameters, fo, listOfFiles, taskExecuted) {
         } else {
             state.failures.push("Segmentation failed");
         }
+
         filesservice.writeJson(fo.statePath, state);
+
+        // Move infos
+        var infos = filesservice.readJson(fo.folderPath + '/infos.json');
+        filesservice.writeJson(fo.encodedPath + '/infos.json', infos);
+        filesservice.removeFile(fo.folderPath + '/infos.json');
+
+        filesservice.removeFolder(fo.tmpPath);
+
         queueservice.removeFromQueue(fo.videoId);
         console.log('End of segmentation, code: ' + code);
     });
+}
+
+function thumbnail(fo) {
+    filesservice.createPathIfNotExist(fo.encodedPath);
+    var process = spawn('ffmpeg', ['-y', '-i', fo.videoPath,
+    '-vf', 'thumbnail,scale=384:192', '-frames:v','1', fo.thumbnailPath]);
+}
+
+function removeFirstStrangeGoP(fo) {
+    var process = spawn('ffmpeg', ['-y', '-f h264', '-i', fo.videoPath,
+        '-ss', '0.5', '-vcodec', 'copy', fo.videoPath]);
 }
 
 function videoEncoding(currentIndex, encodingParameters, fo, listOfFiles, taskExecuted) {
@@ -72,6 +92,10 @@ function videoEncoding(currentIndex, encodingParameters, fo, listOfFiles, taskEx
         "-r", encodingParameters[currentIndex].fps,
         "-x264opts", "keyint=" + encodingParameters[currentIndex].gopSize + ":min-keyint=1:scenecut=-1",
         dest]);
+
+    if (currentIndex === 0) {
+        thumbnail(fo);
+    }
 
     process.on('close', (code) => {
         // State management
@@ -115,7 +139,7 @@ function getEncodingParameters() {
         bitrate: 1200,
         width: 848,
         height: 480
-    },{
+    }/*,{
         bitrate: 3000,
         width: 1280,
         height: 720
@@ -123,7 +147,7 @@ function getEncodingParameters() {
         bitrate: 5000,
         width: 1920,
         height: 1080
-    }];
+    }*/];
 
     var result = [];
     for (var i = 0; i < objs.length; i++) {

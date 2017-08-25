@@ -85,7 +85,6 @@ module.exports = {
             var path;
             var encodingList = [];
             var infos = new VideoInfo({});
-            //var encodingObject = {};
 
             req.pipe(req.busboy);
 
@@ -96,12 +95,9 @@ module.exports = {
                 var fstream = fs.createWriteStream(path + '/' + filename);
                 file.pipe(fstream);
                 fstream.on('close', function () {
-                    //encodingList.push(new EncodingParameter(encodingObject));
-                    //encodingList.push(new EncodingParameter({}));
                     fileservice.writeJson(path + '/infos.json', infos);
                     encodingList = encodingservice.getEncodingParameters();
                     queueservice.saveNewJob(videoId, encodingList);
-                    //encodingservice.encodeVideo(videoId, encodingList);
                     res.redirect('back');
                 });
             });

@@ -62,6 +62,24 @@ function getDefaultPath() {
     return defaultPath;
 }
 
+function removeFile(path) {
+    fs.unlinkSync(path);
+}
+
+function removeFolder(path) {
+    if( fs.existsSync(path) ) {
+        fs.readdirSync(path).forEach(function(file,index){
+            var curPath = path + "/" + file;
+            if(fs.lstatSync(curPath).isDirectory()) { // recurse
+                deleteFolderRecursive(curPath);
+            } else { // delete file
+                fs.unlinkSync(curPath);
+            }
+        });
+        fs.rmdirSync(path);
+    }
+};
+
 module.exports = {
     createPathIfNotExist: createPathIfNotExist,
     createPathForFolder: createPathForFolder,
@@ -69,5 +87,7 @@ module.exports = {
     getFoldersInPath: getFoldersInPath,
     readJson: readJson,
     writeJson: writeJson,
-    getDefaultPath: getDefaultPath
+    getDefaultPath: getDefaultPath,
+    removeFile: removeFile,
+    removeFolder: removeFolder
 };
