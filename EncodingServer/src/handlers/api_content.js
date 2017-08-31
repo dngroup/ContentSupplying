@@ -113,9 +113,11 @@ module.exports = {
                         mimetype = result;
                         extension = mime.extension(mimetype);
                         fileservice.writeJson(path + '/infos.json', infos);
-                        encodingList = encodingservice.getEncodingParameters();
-                        queueservice.saveNewJob(videoId, encodingList);
                         fs.renameSync(path + '/uploadedfile', path + '/video.' + extension);
+                        if (mimetype.split('/')[0] === 'video') {
+                            encodingList = encodingservice.getEncodingParameters();
+                            queueservice.saveNewJob(videoId, encodingList);
+                        }
                     });
                     res.redirect('back');
                 });
