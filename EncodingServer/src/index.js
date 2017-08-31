@@ -4,8 +4,10 @@ var express = require('express'),
     api_encoding = require('./handlers/api_content'),
     flagsservice = require('./services/flags.service'),
     encodingservice = require('./services/encoding.service'),
-    queueservice = require('./services/queue.service');
+    queueservice = require('./services/queue.service'),
+    archiverservice = require('./services/archiver.service');
 var {EncodingParameter} = require('./models/encodingparameter');
+var {FolderPath} = require('./models/folderpath');
 var busboy = require('connect-busboy');
 
 var app = express();
@@ -36,4 +38,7 @@ var server = app.listen(flags.port, function () {
     console.log("Encoding server listening at http://%s:%s", host, port);
 });
 
+
+//archiverservice.archiveVideoFiles(new FolderPath({videoId:'IdTest'})).then(() => console.log('Encoding Terminé !'));
+//archiverservice.archiveVideoFiles(new FolderPath({videoId:'IdTest'})).then(() => console.log('Encoding 2 Terminé !'));
 //encodingservice.segmentation([new EncodingParameter({})], encodingservice.folderObjectCreation('IdTest'), [ './contents/IdTest/tmp/audio.m4a', './contents/IdTest/tmp/video_2000_1080x720_24.mp4' ]);

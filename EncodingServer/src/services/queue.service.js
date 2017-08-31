@@ -58,7 +58,6 @@ function removeFromQueue(videoId) {
     var queue = filesservice.readJson(queueFile);
     for (var i = 0; i < queue.length; i++) {
         if (queue[i].videoId === videoId && queue[i].isRunning === true) {
-            console.log("removing");
             queue.splice(i,1);
         }
     }

@@ -7,6 +7,7 @@ var fs = require('fs');
 var fileservice = require('../services/files.service');
 var encodingservice = require('../services/encoding.service');
 var queueservice = require('../services/queue.service');
+var path = require('path');
 
 module.exports = {
     addApi: function (app) {
@@ -26,9 +27,15 @@ module.exports = {
          *
          */
         app.get('/api/encode/raw/:videoid', function (req, res) {
-            //TODO
-            var result = "encode";
-            res.send(result);
+            var videoid = req.params.videoid;
+            var zippath = path.join(__dirname,'../..', fileservice.createPathForFolder(videoid), videoid + '.zip');
+            fs.exists(zippath, (result) => {
+                if (result) {
+                    res.sendFile(zippath);
+                } else {
+                    res.sendStatus(404);
+                }
+            })
         });
 
         /**

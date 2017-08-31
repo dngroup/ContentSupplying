@@ -1,8 +1,11 @@
 const { spawn } = require('child_process');
 var filesservice = require('./files.service');
+var archiverservice = require('./archiver.service');
 var {EncodingState} = require('../models/encodingstate');
 var {EncodingParameter} = require('../models/encodingparameter');
 var {FolderPath} = require('../models/folderpath');
+
+var extraTasks = 3;
 
 function encodeVideo(videoId, encodingParameters) {
     //Get Path
@@ -25,12 +28,11 @@ function encodeVideo(videoId, encodingParameters) {
         if (code === 0) {
             taskExecuted = 1;
             state.isAudioReady = true;
-            state.percentOfCompletion = Math.floor((taskExecuted / (encodingParameters.length + 2)) * 100);
+            state.percentOfCompletion = Math.floor((taskExecuted / (encodingParameters.length + extraTasks)) * 100);
         } else {
             state.failures.push("audio failed");
         }
         filesservice.writeJson(fo.statePath, state);
-        console.log('End of audio encryption, code: ' + code);
         videoEncoding(0, encodingParameters, fo, [dest_audio], taskExecuted);
     });
 
@@ -39,7 +41,6 @@ function encodeVideo(videoId, encodingParameters) {
 function segmentation(encodingParameters, fo, listOfFiles, taskExecuted) {
     var duration = encodingParameters[0].segmentDuration * 1000;
     var destMPD = fo.encodedPath + "/mpd.mpd";
-    var queueservice = require('./queue.service');
     filesservice.createPathIfNotExist(fo.encodedPath);
     var args = ["-dash", duration, "-profile", "live", "-bs-switching", "no", "-segment-name",
         "$Bandwidth$/out$Bandwidth$_dash$Number$", "-out", destMPD].concat(listOfFiles);
@@ -50,25 +51,41 @@ function segmentation(encodingParameters, fo, listOfFiles, taskExecuted) {
         var state = filesservice.readJson(fo.statePath);
         if (code === 0) {
             taskExecuted += 1;
-            state.isReady = true;
-            state.percentOfCompletion = Math.floor((taskExecuted / (encodingParameters.length + 2)) * 100);
+            state.percentOfCompletion = Math.floor((taskExecuted / (encodingParameters.length + extraTasks)) * 100);
 
         } else {
             state.failures.push("Segmentation failed");
         }
-
         filesservice.writeJson(fo.statePath, state);
 
-        // Move infos
-        var infos = filesservice.readJson(fo.folderPath + '/infos.json');
-        filesservice.writeJson(fo.encodedPath + '/infos.json', infos);
-        filesservice.removeFile(fo.folderPath + '/infos.json');
-
-        filesservice.removeFolder(fo.tmpPath);
-
-        queueservice.removeFromQueue(fo.videoId);
-        console.log('End of segmentation, code: ' + code);
+        moveInfos(fo);
+        archiveEncodedVideo(fo, encodingParameters, taskExecuted);
     });
+}
+
+function archiveEncodedVideo(fo, encodingParameters, taskExecuted) {
+    var queueservice = require('./queue.service');
+    var state = filesservice.readJson(fo.statePath);
+    archiverservice.archiveVideoFiles(fo).then(() => {
+        taskExecuted += 1;
+        state.percentOfCompletion = Math.floor((taskExecuted / (encodingParameters.length + extraTasks)) * 100);
+        state.isReady = true;
+        filesservice.writeJson(fo.statePath, state);
+        queueservice.removeFromQueue(fo.videoId);
+    }).catch(() => {
+        state.failures.push("Archiving failed");
+        filesservice.writeJson(fo.statePath, state);
+        queueservice.removeFromQueue(fo.videoId);
+    });
+
+}
+
+function moveInfos(fo) {
+    // Move infos
+    var infos = filesservice.readJson(fo.folderPath + '/infos.json');
+    filesservice.writeJson(fo.encodedPath + '/infos.json', infos);
+    filesservice.removeFile(fo.folderPath + '/infos.json');
+    filesservice.removeFolder(fo.tmpPath);
 }
 
 function thumbnail(fo) {
@@ -104,7 +121,7 @@ function videoEncoding(currentIndex, encodingParameters, fo, listOfFiles, taskEx
             taskExecuted += 1;
             listOfFiles.push(dest);
             state.availableQualities.push(encodingParameters[currentIndex]);
-            state.percentOfCompletion = Math.floor((taskExecuted / (encodingParameters.length + 2)) * 100);
+            state.percentOfCompletion = Math.floor((taskExecuted / (encodingParameters.length + extraTasks)) * 100);
             if (state.availableQualities.length === encodingParameters.length) {
                 state.isEncoded = true;
                 setTimeout(segmentation, 0, encodingParameters, fo, listOfFiles, taskExecuted);
@@ -114,13 +131,9 @@ function videoEncoding(currentIndex, encodingParameters, fo, listOfFiles, taskEx
         }
         filesservice.writeJson(fo.statePath, state);
 
-        console.log('End of video encryption for parameter ' + currentIndex + ', code: ' + code);
-
         // Next encoding
         if (currentIndex + 1 < encodingParameters.length) {
             var newIndex = currentIndex + 1;
-            console.log('New index = ' + newIndex);
-            console.log(encodingParameters[newIndex]);
             videoEncoding(newIndex, encodingParameters, fo, listOfFiles, taskExecuted);
         }
     });

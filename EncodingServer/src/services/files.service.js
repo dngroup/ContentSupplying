@@ -80,6 +80,18 @@ function removeFolder(path) {
     }
 };
 
+function exist(path) {
+    return fs.existsSync(path);
+}
+
+function rename(oldPath, newPath) {
+    fs.renameSync(oldPath, newPath);
+}
+
+function writeStream(path) {
+    return fs.createWriteStream(path);
+}
+
 module.exports = {
     createPathIfNotExist: createPathIfNotExist,
     createPathForFolder: createPathForFolder,
@@ -89,5 +101,8 @@ module.exports = {
     writeJson: writeJson,
     getDefaultPath: getDefaultPath,
     removeFile: removeFile,
-    removeFolder: removeFolder
+    removeFolder: removeFolder,
+    exist: exist,
+    rename: rename,
+    writeStream: writeStream
 };

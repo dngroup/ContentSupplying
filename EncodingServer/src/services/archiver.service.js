@@ -1,41 +1,67 @@
 /**
  * Created by mlacaud on 21/08/17.
  */
-var fs = require('fs');
+
 var archiver = require('archiver');
 var filesservice = require('./files.service');
 
 function archiveVideoFiles(folderPath) {
-    archive(folderPath.archivePath);
+    return archive(folderPath.encodedPath, folderPath.archivePath, folderPath.videoId);
 }
 
-function archive(path) {
-    var output = fs.createWriteStream(__dirname + '/example.zip');
-    var archive = archiver('zip');
+function archive(inputPath, outputPath, directoryInZip) {
+    var testInterval = 2000;
+    return new Promise(function(done, reject) {
+        var archiving = function() {
+            var output = filesservice.writeStream(outputPath + '.tmp');
 
-    // listen for all archive data to be written
-    output.on('close', function() {
-        console.log(archive.pointer() + ' total bytes');
-        console.log('archiver has been finalized and the output file descriptor has closed.');
-    });
+            var archive = archiver('zip');
 
-    // good practice to catch warnings (ie stat failures and other non-blocking errors)
-    archive.on('warning', function(err) {
-        if (err.code === 'ENOENT') {
-            // log warning
+            // listen for all archive data to be written
+            output.on('close', function () {
+                filesservice.rename(outputPath + '.tmp', outputPath);
+                done();
+            });
+
+            // good practice to catch warnings (ie stat failures and other non-blocking errors)
+            archive.on('warning', function (err) {
+                if (err.code === 'ENOENT') {
+                    reject(err);
+                } else {
+                    // throw error
+                    //throw err;
+                    reject(err);
+                }
+            });
+
+            // good practice to catch this error explicitly
+            archive.on('error', function (err) {
+                //throw err;
+                reject(err);
+            });
+
+            archive.pipe(output);
+
+            archive.directory(inputPath, directoryInZip);
+
+            archive.finalize();
+        };
+        if (!filesservice.exist(outputPath + '.tmp')) {
+            archiving();
         } else {
-            // throw error
-            throw err;
+            var testExist = function() {
+                if (!filesservice.exist(outputPath + '.tmp') && filesservice.exist(outputPath)) {
+                  done();
+                }
+                if (!filesservice.exist(outputPath + '.tmp') && !filesservice.exist(outputPath)) {
+                    archiving();
+                }
+            };
+            setTimeout(testExist, testInterval);
         }
     });
-
-    // good practice to catch this error explicitly
-    archive.on('error', function(err) {
-        throw err;
-    });
-
 }
 
-modules.export = {
+module.exports = {
     archiveVideoFiles: archiveVideoFiles
 };
