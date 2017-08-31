@@ -25,7 +25,7 @@ function getVideosInPath(path) {
     var listOfVideos = [];
     var files = fs.readdirSync(path);
     files.forEach(file => {
-        if (file.indexOf(".mp4") > -1 || file.indexOf(".ogg") > -1 || file.indexOf(".avi") > -1) {
+        if (file.indexOf("video.") > -1) {
             listOfVideos.push(file);
         }
     });

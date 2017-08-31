@@ -8,6 +8,9 @@ var fileservice = require('../services/files.service');
 var encodingservice = require('../services/encoding.service');
 var queueservice = require('../services/queue.service');
 var path = require('path');
+var mmm = require('mmmagic');
+var {Magic} = require('mmmagic');
+var mime = require('mime-types');
 
 module.exports = {
     addApi: function (app) {
@@ -92,6 +95,9 @@ module.exports = {
             var path;
             var encodingList = [];
             var infos = new VideoInfo({});
+            var mimetype = '';
+            var extension = "mp4";
+            var magic = new Magic(mmm.MAGIC_MIME_TYPE);
 
             req.pipe(req.busboy);
 
@@ -99,12 +105,18 @@ module.exports = {
             req.busboy.on('file', function(fieldname, file, filename) {
                 path = fileservice.createPathForFolder(videoId);
                 fileservice.createPathIfNotExist(path);
-                var fstream = fs.createWriteStream(path + '/' + filename);
+                var fstream = fs.createWriteStream(path + '/uploadedfile');
                 file.pipe(fstream);
                 fstream.on('close', function () {
-                    fileservice.writeJson(path + '/infos.json', infos);
-                    encodingList = encodingservice.getEncodingParameters();
-                    queueservice.saveNewJob(videoId, encodingList);
+                    magic.detectFile(path + '/uploadedfile', function(err, result) {
+                        if (err) throw err;
+                        mimetype = result;
+                        extension = mime.extension(mimetype);
+                        fileservice.writeJson(path + '/infos.json', infos);
+                        encodingList = encodingservice.getEncodingParameters();
+                        queueservice.saveNewJob(videoId, encodingList);
+                        fs.renameSync(path + '/uploadedfile', path + '/video.' + extension);
+                    });
                     res.redirect('back');
                 });
             });
