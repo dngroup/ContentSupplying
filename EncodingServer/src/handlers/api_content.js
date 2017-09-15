@@ -20,7 +20,16 @@ module.exports = {
          *
          */
         app.get('/api/encode', function (req, res) {
-            var result = fileservice.getFoldersInPath();
+            var result = [];
+            var videos = fileservice.getFoldersInPath();
+            var obj;
+            for (var i in videos) {
+                obj = fileservice.readJson(fileservice.createPathForFolder(videos[i]) + '/state.json');
+                if (Object.keys(obj).length !== 0 || obj.constructor !== Object) {
+                    result.push(obj.videoId);
+                }
+            }
+
             res.send(result);
         });
 
@@ -48,8 +57,12 @@ module.exports = {
         app.get('/api/encode/state', function (req, res) {
             var result = [];
             var videos = fileservice.getFoldersInPath();
+            var obj;
             for (var i in videos) {
-                result.push(fileservice.readJson(fileservice.createPathForFolder(videos[i]) + '/state.json'));
+                obj = fileservice.readJson(fileservice.createPathForFolder(videos[i]) + '/state.json');
+                if (Object.keys(obj).length !== 0 || obj.constructor !== Object) {
+                    result.push(obj);
+                }
             }
             res.send(result);
         });
