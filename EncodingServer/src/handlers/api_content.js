@@ -11,6 +11,7 @@ var path = require('path');
 var mmm = require('mmmagic');
 var {Magic} = require('mmmagic');
 var mime = require('mime-types');
+var path = require('path');
 
 module.exports = {
     addApi: function (app) {
@@ -23,14 +24,55 @@ module.exports = {
             var result = [];
             var videos = fileservice.getFoldersInPath();
             var obj;
+            var infos;
+            var infosFile = [];
             for (var i in videos) {
-                obj = fileservice.readJson(fileservice.createPathForFolder(videos[i]) + '/state.json');
+                obj = fileservice.readJson(path.join(fileservice.createPathForFolder(videos[i]), 'state.json'));
                 if (Object.keys(obj).length !== 0 || obj.constructor !== Object) {
-                    result.push(obj.videoId);
+                    infosFile.push(path.join(fileservice.createPathForFolder(videos[i]), videos[i], 'infos.json'));
+                    infosFile.push(path.join(fileservice.createPathForFolder(videos[i]), 'infos.json'));
+                    for (var j in infosFile) {
+                        if (fileservice.exist(infosFile[j])) {
+                            infos = fileservice.readJson(infosFile[j]);
+                            break;
+                        }
+                    }
+                    infosFile = [];
+                    result.push({videoId: obj.videoId, infos: infos});
                 }
             }
 
             res.send(result);
+        });
+
+        /**
+         *   Get the infos of a video on the file system
+         *
+         */
+        app.get('/api/encode/:videoid', function (req, res) {
+            var result = [];
+            var videos = fileservice.getFoldersInPath();
+            var obj;
+            var infos;
+            var infosFile = [];
+            var videoId = req.params.videoid;
+            if (fileservice.exist(fileservice.createPathForFolder(videoId))) {
+                obj = fileservice.readJson(path.join(fileservice.createPathForFolder(videoId), 'state.json'));
+                if (Object.keys(obj).length !== 0 || obj.constructor !== Object) {
+                    infosFile.push(path.join(fileservice.createPathForFolder(videoId), videoId, 'infos.json'));
+                    infosFile.push(path.join(fileservice.createPathForFolder(videoId), 'infos.json'));
+                    for (var j in infosFile) {
+                        if (fileservice.exist(infosFile[j])) {
+                            infos = fileservice.readJson(infosFile[j]);
+                            break;
+                        }
+                    }
+                    result.push({videoId: obj.videoId, infos: infos});
+                }
+                res.send(result);
+            } else {
+                res.sendStatus(404);
+            }
         });
 
 
@@ -104,10 +146,10 @@ module.exports = {
          *
          */
         app.post('/api/encode', function(req, res) {
-            var videoId = "default";
+            var videoId = fileservice.createUuid();
             var path;
             var encodingList = [];
-            var infos = new VideoInfo({});
+            var infos = new VideoInfo({videoId: videoId});
             var mimetype = '';
             var extension = "mp4";
             var magic = new Magic(mmm.MAGIC_MIME_TYPE);
@@ -138,20 +180,8 @@ module.exports = {
 
             // Get parameters
             req.busboy.on('field', function(fieldname, val, fieldnameTruncated, valTruncated, encoding, mimetype) {
-                switch (fieldname) {
-                    case 'videoId':
-                        videoId = val;
-                        infos.ytb_id = val;
-                        break;
-                    case 'title':
-                        infos.title = val;
-                        break;
-                    case 'author':
-                        infos.author = val;
-                        break;
-                    case 'description':
-                        infos.description = val;
-                        break;
+                if (fieldname !== 'videoId' && fieldname !== 'ytb_id') {
+                    infos[fieldname] = val;
                 }
             });
         });
@@ -162,9 +192,14 @@ module.exports = {
          *
          */
         app.delete('/api/encode/:videoid', function (req, res) {
-            //TODO
-            var result = "encode";
-            res.send(result);
+            var videoid = req.params.videoid;
+            var folder = path.join(fileservice.getDefaultPath(), videoid);
+            if (fileservice.exist(folder)) {
+                fileservice.removeFolder(folder);
+                res.sendStatus(200);
+            } else {
+                res.sendStatus(404);
+            }
         });
 
         return app;

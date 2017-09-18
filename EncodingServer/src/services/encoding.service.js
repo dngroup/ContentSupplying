@@ -4,6 +4,7 @@ var archiverservice = require('./archiver.service');
 var {EncodingState} = require('../models/encodingstate');
 var {EncodingParameter} = require('../models/encodingparameter');
 var {FolderPath} = require('../models/folderpath');
+var path = require('path');
 
 var extraTasks = 3;
 
@@ -16,7 +17,7 @@ function encodeVideo(videoId, encodingParameters) {
     filesservice.writeJson(fo.statePath, encodingState);
 
 
-    // Encode audio
+
     var dest_audio = fo.tmpPath + '/audio.m4a';
     var process_audio = spawn('ffmpeg', ['-y', '-i', fo.videoPath,
         "-map", "0:a", "-c:a", "aac",
@@ -36,7 +37,9 @@ function encodeVideo(videoId, encodingParameters) {
         videoEncoding(0, encodingParameters, fo, [dest_audio], taskExecuted);
     });
 
+    getDuration(fo);
 }
+
 
 function segmentation(encodingParameters, fo, listOfFiles, taskExecuted) {
     var duration = encodingParameters[0].segmentDuration * 1000;
@@ -97,6 +100,20 @@ function thumbnail(fo) {
 function removeFirstStrangeGoP(fo) {
     var process = spawn('ffmpeg', ['-y', '-f h264', '-i', fo.videoPath,
         '-ss', '0.5', '-vcodec', 'copy', fo.videoPath]);
+}
+
+function getDuration(fo) {
+    //var process = spawn('ffmpeg', ['-i', fo.videoPath]);
+
+    var process = spawn('ffprobe', [ '-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', fo.videoPath]);
+
+    process.stdout.on('data', (data) => {
+        console.log(`stdout: ${data}`);
+        var infos = filesservice.readJson(path.join(fo.folderPath, 'infos.json'));
+        infos.duration = Math.floor(parseInt(data));
+        console.log(infos.duration);
+        filesservice.writeJson(path.join(fo.folderPath, 'infos.json'), infos);
+    });
 }
 
 function videoEncoding(currentIndex, encodingParameters, fo, listOfFiles, taskExecuted) {

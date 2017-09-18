@@ -2,6 +2,7 @@
  * Created by mlacaud on 14/08/17.
  */
 var fs = require('fs');
+var uuid = require('uuid/v4');
 
 var defaultPath = "./contents";
 
@@ -92,6 +93,10 @@ function writeStream(path) {
     return fs.createWriteStream(path);
 }
 
+function createUuid() {
+    return uuid();
+}
+
 module.exports = {
     createPathIfNotExist: createPathIfNotExist,
     createPathForFolder: createPathForFolder,
@@ -104,5 +109,6 @@ module.exports = {
     removeFolder: removeFolder,
     exist: exist,
     rename: rename,
-    writeStream: writeStream
+    writeStream: writeStream,
+    createUuid: createUuid
 };

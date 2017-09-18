@@ -17,6 +17,7 @@ class VideoInfo {
         var defaultDescription = "Video description.";
         var defaultAuthor = "JOADA";
 
+        this.videoId = obj.videoId || defaultYtbId;
         this.ytb_id = obj.ytb_id || obj.videoId || defaultYtbId;
         this.title = obj.title || obj.videoname || defaultTitle;
         this.description = obj.description || defaultDescription;
