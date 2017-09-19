@@ -103,15 +103,11 @@ function removeFirstStrangeGoP(fo) {
 }
 
 function getDuration(fo) {
-    //var process = spawn('ffmpeg', ['-i', fo.videoPath]);
-
     var process = spawn('ffprobe', [ '-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', fo.videoPath]);
 
     process.stdout.on('data', (data) => {
-        console.log(`stdout: ${data}`);
         var infos = filesservice.readJson(path.join(fo.folderPath, 'infos.json'));
         infos.duration = Math.floor(parseInt(data));
-        console.log(infos.duration);
         filesservice.writeJson(path.join(fo.folderPath, 'infos.json'), infos);
     });
 }

@@ -13,6 +13,31 @@ var {Magic} = require('mmmagic');
 var mime = require('mime-types');
 var path = require('path');
 
+function getAllVideosWithInfos(req, res) {
+    var result = [];
+    var videos = fileservice.getFoldersInPath();
+    var obj;
+    var infos;
+    var infosFile = [];
+    for (var i in videos) {
+        obj = fileservice.readJson(path.join(fileservice.createPathForFolder(videos[i]), 'state.json'));
+        if (Object.keys(obj).length !== 0 || obj.constructor !== Object) {
+            infosFile.push(path.join(fileservice.createPathForFolder(videos[i]), videos[i], 'infos.json'));
+            infosFile.push(path.join(fileservice.createPathForFolder(videos[i]), 'infos.json'));
+            for (var j in infosFile) {
+                if (fileservice.exist(infosFile[j])) {
+                    infos = fileservice.readJson(infosFile[j]);
+                    break;
+                }
+            }
+            infosFile = [];
+            result.push({videoId: obj.videoId, infos: infos});
+        }
+    }
+
+    res.send(result);
+}
+
 module.exports = {
     addApi: function (app) {
 
@@ -20,36 +45,19 @@ module.exports = {
          *   Get a list of the videos on the file system
          *
          */
-        app.get('/api/encode', function (req, res) {
-            var result = [];
-            var videos = fileservice.getFoldersInPath();
-            var obj;
-            var infos;
-            var infosFile = [];
-            for (var i in videos) {
-                obj = fileservice.readJson(path.join(fileservice.createPathForFolder(videos[i]), 'state.json'));
-                if (Object.keys(obj).length !== 0 || obj.constructor !== Object) {
-                    infosFile.push(path.join(fileservice.createPathForFolder(videos[i]), videos[i], 'infos.json'));
-                    infosFile.push(path.join(fileservice.createPathForFolder(videos[i]), 'infos.json'));
-                    for (var j in infosFile) {
-                        if (fileservice.exist(infosFile[j])) {
-                            infos = fileservice.readJson(infosFile[j]);
-                            break;
-                        }
-                    }
-                    infosFile = [];
-                    result.push({videoId: obj.videoId, infos: infos});
-                }
-            }
+        app.get('/api/encode', getAllVideosWithInfos);
 
-            res.send(result);
-        });
+        /**
+         *   Get a list of the videos on the file system
+         *
+         */
+        app.get('/api/encode/infos', getAllVideosWithInfos);
 
         /**
          *   Get the infos of a video on the file system
          *
          */
-        app.get('/api/encode/:videoid', function (req, res) {
+        app.get('/api/encode/infos/:videoid', function (req, res) {
             var result = [];
             var videos = fileservice.getFoldersInPath();
             var obj;
@@ -67,7 +75,7 @@ module.exports = {
                             break;
                         }
                     }
-                    result.push({videoId: obj.videoId, infos: infos});
+                    result = {videoId: obj.videoId, infos: infos};
                 }
                 res.send(result);
             } else {
