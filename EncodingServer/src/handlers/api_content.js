@@ -125,7 +125,11 @@ module.exports = {
             var videoId = req.params.videoid;
             var statePath = fileservice.createPathForFolder(videoId) + '/state.json';
             var result = fileservice.readJson(statePath);
-            res.send(result);
+            if (Object.keys(result).length !== 0 || result.constructor !== Object) {
+                res.send(result);
+            } else {
+                res.sendStatus(404);
+            }
         });
 
         /**
