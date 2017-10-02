@@ -29,6 +29,6 @@ RUN apt-get install nodejs -y
 ADD . /encoding
 WORKDIR /encoding
 
-RUN npm install
+RUN npm install 
 
 ENTRYPOINT ["node", "src/index.js"]
