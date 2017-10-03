@@ -161,7 +161,13 @@ function videoEncoding(currentIndex, encodingParameters, fo, listOfFiles, taskEx
 }
 
 function getEncodingParameters() {
-    var objs = [{
+    var objs = [
+        {
+            bitrate: 500,
+            width: 848,
+            height: 480
+        },
+        {
         bitrate: 1200,
         width: 848,
         height: 480
