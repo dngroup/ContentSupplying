@@ -186,7 +186,7 @@ module.exports = {
                             queueservice.saveNewJob(videoId, encodingList);
                         }
                     });
-                    res.redirect('back');
+                    res.sendStatus(200);
                 });
             });
 

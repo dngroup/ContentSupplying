@@ -6,8 +6,8 @@ var express = require('express'),
     encodingservice = require('./services/encoding.service'),
     queueservice = require('./services/queue.service'),
     archiverservice = require('./services/archiver.service');
-var {EncodingParameter} = require('./models/encodingparameter');
-var {FolderPath} = require('./models/folderpath');
+var { EncodingParameter } = require('./models/encodingparameter');
+var { FolderPath } = require('./models/folderpath');
 var busboy = require('connect-busboy');
 
 var app = express();
