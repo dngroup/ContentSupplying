@@ -37,6 +37,25 @@ The state of the the encoding can be found at [http://localhost:8080/api/encode/
 
 The encoded files are in **./contents/{videoId}/{videoId}**
 
+## Working with rabbitmq
+
+To start the encodingService with rabbitmq : 
+```
+node src/index.js -b <broker_addr:port>
+```
+Then, the EncodingService listen on the "video" channel and wait for a request looking like this :
+
+```
+{
+    "id":"d6570ba8-9e9f-4a0d-ac42-3c03f2c07331",
+    "task":"msstream_transcoding_worker.msEncoding",
+    "filename":"video.mp4", 
+    "encodingParameters":[],
+    "videoUrl":"http://localhost/zip/NameVideo.zip",
+    "callback":"http://localhost/final/NameVideo" 
+}
+```
+
 ## Encoding Service
 
 The **Encoding Service** is called in the code using a **videoId** and a list of Encoding Parameters :

@@ -1,3 +1,5 @@
 .*
 !.gitignore
-filesServer
+filesServer/
+pkg/
+bin/

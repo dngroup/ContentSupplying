@@ -16,4 +16,4 @@ COPY . ./app
 
 WORKDIR app
 
-CMD ./wait-for-it.sh db:3306 && go run main.go -b broker:5672 -a server -d db:3306
+CMD ./wait-for-it.sh db:3306 && go run src/main/main.go -b broker:5672 -a server -d db:3306

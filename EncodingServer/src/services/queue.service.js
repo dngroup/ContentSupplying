@@ -84,11 +84,21 @@ function cleanQueue() {
     return queue;
 }
 
+function isJobOverForId(videoId) {
+    var queue = readQueue();
+    for (var i in queue) {
+        if (queue[i].videoId === videoId) {
+            return false;
+        }
+    }
+    return true;
+}
 
 module.exports = {
     startWatcher: startWatcher,
     saveNewJob: saveNewJob,
     removeFromQueue: removeFromQueue,
     readQueue: readQueue,
-    cleanQueue: cleanQueue
+    cleanQueue: cleanQueue,
+    isJobOverForId: isJobOverForId
 };
