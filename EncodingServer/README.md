@@ -3,7 +3,7 @@
 This code is a nodeJS project that provide a simple upload webpage for a user to upload a video and specify some encoding parameters. Once uploaded, the video is encoded using ffmpeg and MP4Box.
 
 This code has been developped and tested on/for Ubuntu 14.04, Ubuntu 16.04 and Ubuntu 17.04. As the code is using child_process,
-the code should not work on Windows and MacOS (but it has not been tested).
+the code should not work on Windows and MacOS (but it has not been tested). 
 
 ## Dependencies
 
