@@ -5,7 +5,7 @@
   "main": "src/index.js",
   "private": true,
   "scripts": {
-    "start": "node src/index.js -b 127.0.0.1:5672",
+    "start": "node src/index.js",
     "docker:build": "docker build -t msstream/encodingservice .",
     "docker:push": "docker push msstream/encodingservice",
     "docker:run": "docker run -d -p 8080:8080 --name=encodingservice msstream/encodingservice",
@@ -20,6 +20,7 @@
     "coworkers": "^0.7.4",
     "express": "^4.15.4",
     "express-http-proxy": "^1.0.6",
+    "is-json": "^2.0.1",
     "mime-types": "^2.1.16",
     "mmmagic": "^0.4.5",
     "multer": "^1.3.0",

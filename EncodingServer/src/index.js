@@ -4,10 +4,9 @@ var express = require('express'),
     http = require('http'),
     fs = require('fs'),
     api_encoding = require('./handlers/api_content'),
+    rabbithandler = require('./handlers/rabbithandler'),
     flagsservice = require('./services/flags.service'),
-    encodingservice = require('./services/encoding.service'),
-    queueservice = require('./services/queue.service'),
-    archiverservice = require('./services/archiver.service');
+    queueservice = require('./services/queue.service');
 var { EncodingParameter } = require('./models/encodingparameter');
 var { FolderPath } = require('./models/folderpath');
 var busboy = require('connect-busboy');
@@ -49,34 +48,5 @@ if (!flags.broker) {
 
 } else {
 
-    amqp.connect('amqp://guest:guest@' + flags.broker, function(err, conn) {
-        conn.createChannel(function(err, ch) {
-          var q = 'video';
-      
-          ch.assertQueue(q, {durable: true});
-          ch.prefetch(1);
-          console.log(" [*] Waiting for messages in %s. To exit press CTRL+C", q);
-          ch.consume(q, function(msg) {
-            var secs = msg.content.toString().split('.').length - 1;
-            var json = JSON.parse(msg.content.toString());
-            console.log(" [x] Received");
-            var file = fs.createWriteStream(json.filename);
-            var request = http.get(json.videoUrl, function(response) {
-              response.pipe(file);
-            });
-            if (Object.keys(json.encodingParameters).length === 0 && json.encodingParameters.constructor === Object) {
-                json.encodingParameters = encodingservice.getEncodingParameters();
-            }
-            console.log(json);
-            //queueservice.saveNewJob(json.id, json.encodingParameters)
-            var interval = setInterval(function() {
-                if (queueservice.isJobOverForId(json.id)) {
-                    clearInterval(interval);
-                    console.log(" [x] Done");
-                    ch.ack(msg);
-                }
-            }, secs * 1000);
-          }, {noAck: false});
-        });
-      });
+    amqp.connect('amqp://guest:guest@' + flags.broker, rabbithandler.RabbitHandle);
 }

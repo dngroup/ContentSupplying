@@ -1,25 +1,30 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
+
 <head>
-    <meta charset="UTF-8">
-    <title>MS Encoding</title>
+  <title>Frontend</title>
+  <script src="lib/vue.min.js"></script>
+  <script src="lib/axios.min.js"></script>
+
 </head>
+
 <body>
-
-<form method="post" action="/api/encode" enctype="multipart/form-data">
-    <p>Video Id: <input type="text" name="videoId" value="IdTest"></p>
-    <p>Title: <input type="text" name="title" value="Video Telecom"></p>
-    <p>Author: <input type="text" name="author" value="User"></p>
-    <p>Description: <input type="text" name="description" value="Description of the video"></p>
-
-    <!--<p>Bitrate: <input type="number" name="bitrate" min="500" max="6000" value="2000"></p>
-    <p>Width: <input type="number" name="width" min="720" max="1920" value="1080"></p>
-    <p>Height: <input type="number" name="height" min="480" max="1080" value="720"></p>-->
-
-    <p><input type="file" name="fileUploaded"/></p>
-    <p><input type="submit"></p>
-</form>
-
-
+  <div id="app">
+    <h1>{{ greeting }}</h1>
+    <form enctype="multipart/form-data" novalidate >
+      <h2>Upload video</h2>
+      <div>
+        <input type="text" v-model="params.videoId">
+        <input type="text" v-model="params.test.test1">
+        <input type="text" v-model="params.test.test2">
+      </div>
+      <div class="dropbox">
+        <input type="file" multiple :name="uploadFieldName" @change="filesChange($event.target.name, $event.target.files); fileCount = $event.target.files.length"
+          class="input-file">
+      </div>
+    </form>
+  </div>
+  <script src="main.js"></script>
 </body>
+
 </html>

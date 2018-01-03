@@ -164,6 +164,16 @@ function getEncodingParameters() {
     var objs = [
         {
             bitrate: 500,
+            width: 1280,
+            height: 720
+        },
+        {
+        bitrate: 1200,
+        width: 1280,
+        height: 720
+    }
+        /*{
+            bitrate: 500,
             width: 848,
             height: 480
         },
@@ -171,7 +181,7 @@ function getEncodingParameters() {
         bitrate: 1200,
         width: 848,
         height: 480
-    }/*,{
+    }*//*,{
         bitrate: 3000,
         width: 1280,
         height: 720

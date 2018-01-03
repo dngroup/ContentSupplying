@@ -12,6 +12,7 @@ var mmm = require('mmmagic');
 var {Magic} = require('mmmagic');
 var mime = require('mime-types');
 var path = require('path');
+var isJSON = require('is-json');
 
 function getAllVideosWithInfos(req, res) {
     var result = [];
@@ -193,7 +194,11 @@ module.exports = {
             // Get parameters
             req.busboy.on('field', function(fieldname, val, fieldnameTruncated, valTruncated, encoding, mimetype) {
                 if (fieldname !== 'videoId' && fieldname !== 'ytb_id') {
-                    infos[fieldname] = val;
+                    if(!isJSON(val)) {
+                        infos[fieldname] = val;
+                    } else {
+                        infos[fieldname] = JSON.parse(val)
+                    }
                 }
             });
         });
