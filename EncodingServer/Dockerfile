@@ -27,7 +27,7 @@ RUN bash nodesource_setup.sh
 RUN apt-get install nodejs -y
 
 ADD . /encoding
-WORKDIR /encoding
+WORKDIR /encoding 
 
 RUN npm install 
 

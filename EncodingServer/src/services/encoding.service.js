@@ -151,13 +151,13 @@ function videoEncoding(currentIndex, encodingParameters, fo, listOfFiles, taskEx
         }
     });
 
-    /*process.stdout.on('data', (data) => {
-        console.log(`stdout: ${data}`);
+    process.stdout.on('data', (data) => {
+        //console.log(`stdout: ${data}`);
     });
 
     process.stderr.on('data', (data) => {
-        console.log(`stderr: ${data}`);
-    });*/
+        //console.log(`stderr: ${data}`);
+    });
 }
 
 function getEncodingParameters() {
@@ -168,7 +168,7 @@ function getEncodingParameters() {
             height: 720
         },
         {
-        bitrate: 1200,
+        bitrate: 4000,
         width: 1280,
         height: 720
     }
