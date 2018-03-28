@@ -56,7 +56,15 @@ brokerEncodingHandler = function(msg) {
     });
 
 
-  }
+  };
+
+brokerEncodingHandler2 = function(msg) {
+    var json = JSON.parse(msg.content.toString());
+    console.log(json);
+    setTimeout(() => {channel.ack(msg);}, 10000);
+
+
+};
 
 RabbitHandle = function(err, conn) {
     conn.createChannel(function(err, ch) {
@@ -68,7 +76,7 @@ RabbitHandle = function(err, conn) {
 
       // New message received
       channel = ch;
-      ch.consume(q, brokerEncodingHandler, {noAck: false});
+      ch.consume(q, brokerEncodingHandler2, {noAck: false});
     });
   }
 

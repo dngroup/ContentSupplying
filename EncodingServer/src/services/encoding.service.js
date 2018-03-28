@@ -19,10 +19,10 @@ function encodeVideo(videoId, encodingParameters) {
 
 
     var dest_audio = fo.tmpPath + '/audio.m4a';
-    var process_audio = spawn('ffmpeg', ['-y', '-i', fo.videoPath,
+    var process_audio = spawn('ffmpeg', ['-y', '-loglevel', 'panic', '-i', fo.videoPath,
         "-map", "0:a", "-c:a", "aac",
         "-strict", "-2", "-force_key_frames", "expr:gte(t,n_forced*0.5)",
-        dest_audio]);
+        dest_audio], { stdio: 'ignore' });
     process_audio.on('close', (code) => {
         var state = filesservice.readJson(fo.statePath);
         var taskExecuted = 0;
@@ -40,6 +40,10 @@ function encodeVideo(videoId, encodingParameters) {
     getDuration(fo);
 }
 
+function liveStreamEncoding(encodingParameters) {
+
+}
+
 
 function segmentation(encodingParameters, fo, listOfFiles, taskExecuted) {
     var duration = encodingParameters[0].segmentDuration * 1000;
@@ -48,7 +52,7 @@ function segmentation(encodingParameters, fo, listOfFiles, taskExecuted) {
     var args = ["-dash", duration, "-profile", "live", "-bs-switching", "no", "-segment-name",
         "$Bandwidth$/out$Bandwidth$_dash$Number$", "-out", destMPD].concat(listOfFiles);
 
-    var process = spawn("MP4Box", args);
+    var process = spawn("MP4Box", args, { stdio: 'ignore' });
 
     process.on('close', (code) => {
         var state = filesservice.readJson(fo.statePath);
@@ -94,16 +98,16 @@ function moveInfos(fo) {
 function thumbnail(fo) {
     filesservice.createPathIfNotExist(fo.encodedPath);
     var process = spawn('ffmpeg', ['-y', '-i', fo.videoPath,
-    '-vf', 'thumbnail,scale=384:192', '-frames:v','1', fo.thumbnailPath]);
+    '-vf', 'thumbnail,scale=384:192', '-frames:v','1', fo.thumbnailPath], { stdio: 'ignore' });
 }
 
 function removeFirstStrangeGoP(fo) {
     var process = spawn('ffmpeg', ['-y', '-f h264', '-i', fo.videoPath,
-        '-ss', '0.5', '-vcodec', 'copy', fo.videoPath]);
+        '-ss', '0.5', '-vcodec', 'copy', fo.videoPath], { stdio: 'ignore' });
 }
 
 function getDuration(fo) {
-    var process = spawn('ffprobe', [ '-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', fo.videoPath]);
+    var process = spawn('ffprobe', [ '-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', fo.videoPath], { stdio: 'ignore' });
 
     process.stdout.on('data', (data) => {
         var infos = filesservice.readJson(path.join(fo.folderPath, 'infos.json'));
@@ -121,7 +125,7 @@ function videoEncoding(currentIndex, encodingParameters, fo, listOfFiles, taskEx
         "-vf", "scale=" + encodingParameters[currentIndex].width + ":" + encodingParameters[currentIndex].height,
         "-r", encodingParameters[currentIndex].fps,
         "-x264opts", "keyint=" + encodingParameters[currentIndex].gopSize + ":min-keyint=1:scenecut=-1",
-        dest]);
+        dest], { stdio: 'ignore' });
 
     if (currentIndex === 0) {
         thumbnail(fo);
