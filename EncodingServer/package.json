@@ -5,7 +5,7 @@
   "main": "src/index.js",
   "private": true,
   "scripts": {
-    "start": "node src/index.js -b localhost:5672",
+    "start": "node src/index.js",
     "docker:build": "docker build -t msstream/encodingservice .",
     "docker:push": "docker push msstream/encodingservice",
     "docker:run": "docker run -d -p 8080:8080 --name=encodingservice msstream/encodingservice",

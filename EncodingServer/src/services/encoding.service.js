@@ -109,11 +109,11 @@ function removeFirstStrangeGoP(fo) {
 function getDuration(fo) {
     var process = spawn('ffprobe', [ '-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', fo.videoPath], { stdio: 'ignore' });
 
-    process.stdout.on('data', (data) => {
+    /*process.stdout.on('data', (data) => {
         var infos = filesservice.readJson(path.join(fo.folderPath, 'infos.json'));
         infos.duration = Math.floor(parseInt(data));
         filesservice.writeJson(path.join(fo.folderPath, 'infos.json'), infos);
-    });
+    });*/
 }
 
 function videoEncoding(currentIndex, encodingParameters, fo, listOfFiles, taskExecuted) {
@@ -155,19 +155,24 @@ function videoEncoding(currentIndex, encodingParameters, fo, listOfFiles, taskEx
         }
     });
 
-    process.stdout.on('data', (data) => {
+    /*process.stdout.on('data', (data) => {
         //console.log(`stdout: ${data}`);
     });
 
     process.stderr.on('data', (data) => {
         //console.log(`stderr: ${data}`);
-    });
+    });*/
 }
 
 function getEncodingParameters() {
     var objs = [
         {
             bitrate: 500,
+            width: 1280,
+            height: 720
+        },
+        {
+            bitrate: 1000,
             width: 1280,
             height: 720
         },
