@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Frontend</title>
+  <script src="lib/vue.min.js"></script>
+  <script src="lib/axios.min.js"></script>
+
+</head>
+
+<body>
+  <div id="app">
+    <h1>{{ greeting }}</h1>
+    <form enctype="multipart/form-data" novalidate >
+      <h2>Upload video</h2>
+      <div>
+        <input type="text" v-model="params.videoId">
+        <input type="text" v-model="params.test.test1">
+        <input type="text" v-model="params.test.test2">
+      </div>
+      <div class="dropbox">
+        <input type="file" multiple :name="uploadFieldName" @change="filesChange($event.target.name, $event.target.files); fileCount = $event.target.files.length"
+          class="input-file">
+      </div>
+    </form>
+  </div>
+  <script src="main.js"></script>
+</body>
+
+</html>

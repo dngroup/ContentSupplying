@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MS Encoding</title>
+</head>
+<body>
+
+<form method="post" action="/api/encode" enctype="multipart/form-data">
+    <p>Video Id: <input type="text" name="videoId" value="IdTest"></p>
+    <p>Title: <input type="text" name="title" value="Video Telecom"></p>
+    <p>Author: <input type="text" name="author" value="User"></p>
+    <p>Description: <input type="text" name="description" value="Description of the video"></p>
+    <p>Test1: <input type="text" name="test[test1]" value="Test1"></p>
+    <p>Test2: <input type="text" name="test[test2]" value="Test2"></p>
+
+    <!--<p>Bitrate: <input type="number" name="bitrate" min="500" max="6000" value="2000"></p>
+    <p>Width: <input type="number" name="width" min="720" max="1920" value="1080"></p>
+    <p>Height: <input type="number" name="height" min="480" max="1080" value="720"></p>-->
+
+    <p><input type="file" name="fileUploaded"/></p>
+    <p><input type="submit"></p>
+</form>
+
+
+</body>
+</html>

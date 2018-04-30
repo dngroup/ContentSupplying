@@ -1,0 +1,6 @@
+node_modules/
+contents/
+.vscode/
+.*
+!.gitignore
+!.dockerignore

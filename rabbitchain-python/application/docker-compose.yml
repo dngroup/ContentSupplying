@@ -1,0 +1,37 @@
+version: '2'
+services:
+  broker:
+    image: rabbitmq
+    expose:
+      - "5672"
+
+  server:
+    image: server
+    ports:
+      - "8085:8085"
+    links:
+      - "broker"
+      -  "db"
+
+  db:
+    image: mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_USER=re355
+      - MYSQL_PASSWORD=re355
+      - MYSQL_DATABASE=re355
+    ports:
+      - "3306:3306"
+
+  worker:
+    image: worker
+    environment:
+      - BROKER_ADDR=broker:5672
+    links:
+      - "broker"
+
+  frontend:
+    image: frontend
+    ports:
+      - "3000:3000"
+

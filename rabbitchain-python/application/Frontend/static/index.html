@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Frontend</title>
+  <link rel="stylesheet" type="text/css" href="css/style.css">
+  <script src="lib/vue.min.js"></script>
+  <script src="lib/axios.min.js"></script>
+  <script src="lib/dash.all.min.js"></script>
+
+</head>
+<body>
+  <div id="app">
+    <h1>{{ greeting }}</h1>
+    <form enctype="multipart/form-data" novalidate v-if="isInitial || isSaving">
+        <h2>Upload video</h2>
+        <div class="dropbox">
+          <input type="file" multiple :name="uploadFieldName" :disabled="isSaving" @change="filesChange($event.target.name, $event.target.files); fileCount = $event.target.files.length" class="input-file">
+        </div>
+      </form>
+    <h2>List of Videos</h2>
+    <p>Last update: {{updateTime}}</p>
+    <div v-for="video in listVideo">
+      <li>{{video.Name}} <div v-if="video.IsReady==1"><button @click="onPlay(video)">Play</button></div><div v-if="video.IsReady==0"> (Not ready) </div></li>
+    </div>
+  </div>
+    <h2>Video Player</h2>
+    <div>
+      <div width="640" height="480">
+        <div id="videocontainer" class="videosize">
+          <video class="videosize" id="videoplayer"  controls="true"></video>
+        </div>
+      </div>
+    </div>
+  <script src="services/player.service.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
